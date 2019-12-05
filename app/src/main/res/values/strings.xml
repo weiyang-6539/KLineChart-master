@@ -1,0 +1,17 @@
+<resources>
+    <string name="app_name">KLineChart-master</string>
+
+    <string name="k_line_tab01">分时</string>
+    <string name="k_line_tab02">15分钟</string>
+    <string name="k_line_tab03">1小时</string>
+    <string name="k_line_tab04">4小时</string>
+    <string name="k_line_tab05">1天</string>
+    <string name="k_line_tab06">更多</string>
+    <string-array name="k_line_tabs">
+        <item>1分钟</item>
+        <item>5分钟</item>
+        <item>30分钟</item>
+        <item>1周</item>
+        <item>1月</item>
+    </string-array>
+</resources>

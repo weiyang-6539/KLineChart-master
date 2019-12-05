@@ -1,0 +1,221 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#1d1f26"
+    android:orientation="vertical">
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="50dp">
+
+        <ImageButton
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:adjustViewBounds="true"
+            android:background="@null"
+            android:onClick="onBack"
+            android:src="@drawable/ic_back" />
+
+        <TextView
+            android:id="@+id/tv_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:textColor="@android:color/white"
+            android:textSize="19sp"
+            tools:text="BTC/USDT" />
+    </FrameLayout>
+
+    <com.github.wyang.klinechartdemo.widget.ObservableScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <android.support.constraint.ConstraintLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingLeft="12dp"
+                android:paddingTop="8dp"
+                android:paddingRight="12dp"
+                android:paddingBottom="8dp">
+
+                <TextView
+                    android:id="@+id/tv_quote_latest"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="11312.33"
+                    android:textSize="25sp"
+                    android:textStyle="bold"
+                    app:layout_constraintLeft_toLeftOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"
+                    tools:textColor="@color/chart_default" />
+
+                <TextView
+                    android:id="@+id/tv_quote_latest_transform"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="3dp"
+                    android:text="≈76822.45CNY"
+                    android:textColor="@color/chart_text"
+                    app:layout_constraintLeft_toLeftOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/tv_quote_latest" />
+
+                <TextView
+                    android:id="@+id/tv_quote_change"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="5dp"
+                    android:layout_marginLeft="5dp"
+                    android:layout_marginTop="3dp"
+                    android:text="+0.84%"
+                    app:layout_constraintLeft_toRightOf="@id/tv_quote_latest_transform"
+                    app:layout_constraintTop_toBottomOf="@id/tv_quote_latest"
+                    tools:textColor="@color/chart_red" />
+
+                <LinearLayout
+                    android:id="@+id/ll_quote_key"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    app:layout_constraintRight_toLeftOf="@id/ll_quote_value"
+                    app:layout_constraintTop_toTopOf="parent">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:minWidth="35dp"
+                        android:text="高"
+                        android:textColor="@color/chart_text" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="3dp"
+                        android:minWidth="35dp"
+                        android:text="低"
+                        android:textColor="@color/chart_text" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="3dp"
+                        android:minWidth="35dp"
+                        android:text="24H"
+                        android:textColor="@color/chart_text" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/ll_quote_value"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:gravity="end"
+                    android:orientation="vertical"
+                    app:layout_constraintRight_toRightOf="parent"
+                    app:layout_constraintTop_toTopOf="parent">
+
+                    <TextView
+                        android:id="@+id/tv_quote_high"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="end"
+                        android:text="11453.00"
+                        android:textColor="#BEC3D6" />
+
+                    <TextView
+                        android:id="@+id/tv_quote_low"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="3dp"
+                        android:gravity="end"
+                        android:text="11453.00"
+                        android:textColor="#BEC3D6" />
+
+                    <TextView
+                        android:id="@+id/tv_quote_24h"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="3dp"
+                        android:gravity="end"
+                        android:text="0"
+                        android:textColor="#BEC3D6" />
+                </LinearLayout>
+            </android.support.constraint.ConstraintLayout>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="3dp"
+                android:background="#222" />
+
+            <android.support.design.widget.TabLayout
+                android:id="@+id/mTabLayout1"
+                android:layout_width="match_parent"
+                android:layout_height="35dp"
+                app:tabBackground="@android:color/transparent"
+                app:tabIndicatorColor="@color/theme0xff"
+                app:tabIndicatorHeight="2dp"
+                app:tabMode="fixed"
+                app:tabPaddingEnd="-1dp"
+                app:tabPaddingStart="-1dp"
+                app:tabSelectedTextColor="@color/theme0xff"
+                app:tabTextAppearance="@style/TabLayoutTextStyle_sp13"
+                app:tabTextColor="@color/light" />
+
+            <com.github.wyang.klinechartlib.huobi.KLineChartView
+                android:id="@+id/mKLineChartView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="#202326" />
+
+            <android.support.v4.widget.Space
+                android:layout_width="wrap_content"
+                android:layout_height="500dp" />
+        </LinearLayout>
+    </com.github.wyang.klinechartdemo.widget.ObservableScrollView>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="#262a2d"
+        android:orientation="horizontal"
+        android:paddingLeft="12dp"
+        android:paddingTop="8dp"
+        android:paddingRight="12dp"
+        android:paddingBottom="8dp">
+
+        <TextView
+            android:id="@+id/tv_buy"
+            android:layout_width="0dp"
+            android:layout_height="40dp"
+            android:layout_weight="1"
+            android:background="@drawable/shape_corners_radius2"
+            android:gravity="center"
+            android:text="Buy"
+            android:textColor="@android:color/white"
+            android:textSize="19sp"
+            tools:backgroundTint="#f00" />
+
+        <Space
+            android:layout_width="12dp"
+            android:layout_height="match_parent" />
+
+        <TextView
+            android:id="@+id/tv_sell"
+            android:layout_width="0dp"
+            android:layout_height="40dp"
+            android:layout_weight="1"
+            android:background="@drawable/shape_corners_radius2"
+            android:gravity="center"
+            android:text="Sell"
+            android:textColor="@android:color/white"
+            android:textSize="19sp"
+            tools:backgroundTint="#0f0" />
+    </LinearLayout>
+</LinearLayout>

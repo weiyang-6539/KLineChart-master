@@ -1,0 +1,13 @@
+<resources>
+    <string name="app_name">KLineChartLib</string>
+
+    <string name="chart_date">时间</string>
+    <string name="chart_open">开</string>
+    <string name="chart_high">高</string>
+    <string name="chart_low">低</string>
+    <string name="chart_close">收</string>
+    <string name="chart_change_value">涨跌额</string>
+    <string name="chart_change_percent">涨跌幅</string>
+    <string name="chart_amount">成交量</string>
+
+</resources>

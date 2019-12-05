@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="KLineChartView">
+        <attr name="kc_item_width" format="dimension" />
+        <attr name="kc_candle_width" format="dimension" />
+        <attr name="kc_candle_line_width" format="dimension" />
+        <attr name="kc_grid_line_width" format="dimension" />
+        <attr name="kc_grid_line_color" format="color" />
+        <attr name="kc_line_width" format="dimension" />
+        <attr name="kc_text_color" format="color" />
+        <attr name="kc_text_size" format="dimension" />
+        <attr name="kc_highlight_color" format="color" />
+        <attr name="kc_highlight_size" format="dimension" />
+    </declare-styleable>
+</resources>
