@@ -37,9 +37,6 @@ public abstract class ChartRect implements ICharRect {
      */
     protected float minValue;
 
-    protected int rows;
-    protected int column;
-
     protected KLineChartView mChart;
     protected LinePathHelper mHelper;
 

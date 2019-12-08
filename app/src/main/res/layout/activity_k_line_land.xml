@@ -1,0 +1,292 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#0A1623">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="45dp"
+        android:background="#151E2F"
+        android:orientation="horizontal"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <android.support.constraint.ConstraintLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1">
+
+            <TextView
+                android:id="@+id/tv_code"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginStart="15dp"
+                android:layout_marginLeft="15dp"
+                android:text="BTC/USDT"
+                android:textColor="@android:color/white"
+                android:textSize="19sp"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintLeft_toLeftOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <TextView
+                android:id="@+id/tv_quote_latest"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="5dp"
+                android:layout_marginLeft="5dp"
+                android:text="11312.33"
+                android:textColor="@color/chart_default"
+                android:textSize="17sp"
+                android:textStyle="bold"
+                app:layout_constraintBottom_toBottomOf="@id/tv_code"
+                app:layout_constraintLeft_toRightOf="@id/tv_code" />
+
+            <TextView
+                android:id="@+id/tv_quote_change"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="5dp"
+                android:layout_marginLeft="5dp"
+                android:layout_marginTop="3dp"
+                android:text="+0.84%"
+                android:textColor="@color/chart_red"
+                app:layout_constraintBottom_toBottomOf="@id/tv_code"
+                app:layout_constraintLeft_toRightOf="@id/tv_quote_latest" />
+
+            <TextView
+                android:id="@+id/tv_quote_latest_transform"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="5dp"
+                android:layout_marginLeft="5dp"
+                android:layout_marginTop="3dp"
+                android:text="≈76822.45CNY"
+                android:textColor="@color/chart_text"
+                app:layout_constraintBottom_toBottomOf="@id/tv_code"
+                app:layout_constraintLeft_toRightOf="@id/tv_quote_change" />
+        </android.support.constraint.ConstraintLayout>
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_margin="3dp"
+                android:text="高"
+                android:textColor="@color/chart_text" />
+
+            <TextView
+                android:id="@+id/tv_quote_high"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="end"
+                android:text="11453.00"
+                android:textColor="#BEC3D6" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_margin="3dp"
+                android:text="低"
+                android:textColor="@color/chart_text" />
+
+            <TextView
+                android:id="@+id/tv_quote_low"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="end"
+                android:text="11453.00"
+                android:textColor="#BEC3D6" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_margin="3dp"
+                android:text="24H"
+                android:textColor="@color/chart_text" />
+
+            <TextView
+                android:id="@+id/tv_quote_24h"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="end"
+                android:text="0"
+                android:textColor="#BEC3D6" />
+
+            <ImageButton
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_gravity="right"
+                android:adjustViewBounds="true"
+                android:background="@null"
+                android:onClick="onClose"
+                android:padding="10dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/ic_close" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/ll"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:layout_marginTop="45dp"
+        android:gravity="center_horizontal"
+        android:minWidth="60dp"
+        android:orientation="vertical"
+        app:layout_constraintRight_toRightOf="parent">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:text="主图"
+            android:textColor="@color/theme0xff"
+            android:textSize="14sp" />
+
+        <RadioGroup
+            android:id="@+id/rg_main"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="2">
+
+            <RadioButton
+                android:id="@+id/rb_ma"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:button="@null"
+                android:gravity="center"
+                android:text="MA"
+                android:textColor="@drawable/selector_tab_text" />
+
+            <RadioButton
+                android:id="@+id/rb_boll"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:button="@null"
+                android:gravity="center"
+                android:text="BOLL"
+                android:textColor="@drawable/selector_tab_text" />
+        </RadioGroup>
+
+        <ImageButton
+            android:id="@+id/btn_main_hide"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:background="@null"
+            android:onClick="onHideMain"
+            android:src="@drawable/selector_stock_setting_eye" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="0.5dp"
+            android:background="@color/chart_grid_line" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:text="副图"
+            android:textColor="@color/theme0xff"
+            android:textSize="14sp" />
+
+        <RadioGroup
+            android:id="@+id/rg_sub"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="4">
+
+            <RadioButton
+                android:id="@+id/rb_macd"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:button="@null"
+                android:gravity="center"
+                android:text="MACD"
+                android:textColor="@drawable/selector_tab_text" />
+
+            <RadioButton
+                android:id="@+id/rb_kdj"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:button="@null"
+                android:gravity="center"
+                android:text="KDJ"
+                android:textColor="@drawable/selector_tab_text" />
+
+            <RadioButton
+                android:id="@+id/rb_rsi"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:button="@null"
+                android:gravity="center"
+                android:text="RSI"
+                android:textColor="@drawable/selector_tab_text" />
+
+            <RadioButton
+                android:id="@+id/rb_wr"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:button="@null"
+                android:gravity="center"
+                android:text="WR"
+                android:textColor="@drawable/selector_tab_text" />
+        </RadioGroup>
+
+        <ImageButton
+            android:id="@+id/btn_sub_hide"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:adjustViewBounds="true"
+            android:background="@null"
+            android:onClick="onHideSub"
+            android:src="@drawable/selector_stock_setting_eye" />
+    </LinearLayout>
+
+    <android.support.design.widget.TabLayout
+        android:id="@+id/mTabLayout"
+        android:layout_width="0dp"
+        android:layout_height="35dp"
+        android:background="#151E2F"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toLeftOf="@id/ll"
+        app:tabBackground="@android:color/transparent"
+        app:tabIndicatorColor="@color/theme0xff"
+        app:tabIndicatorHeight="2dp"
+        app:tabMinWidth="60dp"
+        app:tabMode="fixed"
+        app:tabPaddingEnd="-1dp"
+        app:tabPaddingStart="-1dp"
+        app:tabSelectedTextColor="@color/theme0xff"
+        app:tabTextAppearance="@style/TabLayoutTextStyle_sp13"
+        app:tabTextColor="@color/light" />
+
+    <com.github.wyang.klinechartlib.huobi.KLineChartView
+        android:id="@+id/mKLineChartView"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginTop="50dp"
+        android:background="#151E2F"
+        app:layout_constraintBottom_toTopOf="@id/mTabLayout"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toLeftOf="@id/ll"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.0" />
+</android.support.constraint.ConstraintLayout>

@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="5dp"
+    android:background="@drawable/shape_pop_bg">
+
+    <TextView
+        android:id="@+id/tv_main_view_label"
+        android:layout_width="wrap_content"
+        android:layout_height="40dp"
+        android:gravity="center"
+        android:paddingLeft="15dp"
+        android:paddingRight="15dp"
+        android:text="@string/main_view"
+        android:textColor="#a1a1a1"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <android.support.v7.widget.RecyclerView
+        android:id="@+id/rv_main"
+        android:layout_width="0dp"
+        android:layout_height="40dp"
+        android:orientation="horizontal"
+        app:layoutManager="android.support.v7.widget.LinearLayoutManager"
+        app:layout_constraintLeft_toRightOf="@id/tv_main_view_label"
+        app:layout_constraintRight_toLeftOf="@id/btn_main_hide"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:listitem="@layout/item_tab" />
+
+    <ImageButton
+        android:id="@+id/btn_main_hide"
+        android:layout_width="wrap_content"
+        android:layout_height="40dp"
+        android:adjustViewBounds="true"
+        android:background="@null"
+        android:padding="8dp"
+        android:scaleType="fitCenter"
+        android:src="@drawable/selector_stock_setting_eye"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/tv_second_view_label"
+        android:layout_width="wrap_content"
+        android:layout_height="40dp"
+        android:gravity="center"
+        android:paddingLeft="15dp"
+        android:paddingRight="15dp"
+        android:text="@string/sub_view"
+        android:textColor="#a1a1a1"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tv_main_view_label" />
+
+    <android.support.v7.widget.RecyclerView
+        android:id="@+id/rv_sub"
+        android:layout_width="0dp"
+        android:layout_height="40dp"
+        android:orientation="horizontal"
+        app:layoutManager="android.support.v7.widget.LinearLayoutManager"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintLeft_toRightOf="@id/tv_second_view_label"
+        app:layout_constraintRight_toLeftOf="@id/btn_sub_hide"
+        tools:listitem="@layout/item_tab" />
+
+    <ImageButton
+        android:id="@+id/btn_sub_hide"
+        android:layout_width="wrap_content"
+        android:layout_height="40dp"
+        android:adjustViewBounds="true"
+        android:background="@null"
+        android:padding="8dp"
+        android:scaleType="fitCenter"
+        android:src="@drawable/selector_stock_setting_eye"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tv_main_view_label" />
+
+</android.support.constraint.ConstraintLayout>

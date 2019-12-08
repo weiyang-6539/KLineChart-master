@@ -3,19 +3,20 @@
     <color name="chart_background">#202326</color>
     <color name="chart_point_bac">#202326</color>
     <color name="chart_grid_line">#1AFFFFFF</color>
-    <color name="chart_text">#818596</color>
+    <color name="chart_text">#738495</color>
     <color name="chart_highlight">#e2e2e2</color>
     <color name="chart_selector">#202326</color>
 
-    <color name="chart_red">#D0514B</color>
-    <color name="chart_green">#54BA9C</color>
+    <color name="chart_red">#C75266</color>
+    <color name="chart_green">#4BA692</color>
     <color name="chart_default">#909EAE</color>
     <color name="chart_close_line">#516CA2</color>
     <color name="chart_line_background">#1aC9933E</color>
 
-    <color name="chart_ma5">#DA8AE5</color>
-    <color name="chart_ma10">#39B0E8</color>
-    <color name="chart_ma30">#FFC76D</color>
+    <color name="chart_line1">#DDC994</color>
+    <color name="chart_line2">#7FCDCD</color>
+    <color name="chart_line3">#A696CD</color>
+
     <color name="chart_white">#ffffff</color>
 
 </resources>

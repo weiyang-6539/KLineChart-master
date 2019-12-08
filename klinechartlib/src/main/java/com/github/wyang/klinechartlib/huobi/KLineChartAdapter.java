@@ -14,11 +14,12 @@ import java.util.List;
 public class KLineChartAdapter extends ChartAdapter implements IBarLineSetProvider {
     private List<ICandle> mCandleData = new ArrayList<>();
     private List<IBarLineSet> mMainLineSets;
-    private List<IBarLineSet> mChildLineSets;
+    private List<IBarLineSet> mChild1LineSets;
+    private List<IBarLineSet> mChild2LineSets;
 
-    private int indexMain = 0;
-    private int indexChild1 = 0;
-    private int indexChild2 = -1;
+    private int indexMain;
+    private int indexChild1;
+    private int indexChild2;
 
     public KLineChartAdapter() {
     }
@@ -46,8 +47,30 @@ public class KLineChartAdapter extends ChartAdapter implements IBarLineSetProvid
         this.mMainLineSets = barLineSets;
     }
 
-    public void setChildLineSets(List<IBarLineSet> barLineSets) {
-        this.mChildLineSets = barLineSets;
+    public void setChild1LineSets(List<IBarLineSet> barLineSets) {
+        this.mChild1LineSets = barLineSets;
+    }
+
+    public void setChild2LineSets(List<IBarLineSet> barLineSets) {
+        this.mChild2LineSets = barLineSets;
+    }
+
+    public void changeMain(int index) {
+        this.indexMain = index;
+
+        notifyDataSetInvalidated();
+    }
+
+    public void changeChild1(int index) {
+        this.indexChild1 = index;
+
+        notifyDataSetInvalidated();
+    }
+
+    public void changeChild2(int index) {
+        this.indexChild2 = index;
+
+        notifyDataSetInvalidated();
     }
 
     @Override
@@ -57,11 +80,11 @@ public class KLineChartAdapter extends ChartAdapter implements IBarLineSetProvid
 
     @Override
     public IBarLineSet getChild1LineSet() {
-        return indexChild1 != -1 ? mChildLineSets.get(indexChild1) : null;
+        return indexChild1 != -1 ? mChild1LineSets.get(indexChild1) : null;
     }
 
     @Override
     public IBarLineSet getChild2LineSet() {
-        return indexChild2 != -1 ? mChildLineSets.get(indexChild2) : null;
+        return indexChild2 != -1 ? mChild2LineSets.get(indexChild2) : null;
     }
 }

@@ -1,6 +1,8 @@
 package com.github.wyang.klinechartdemo;
 
 import android.content.Context;
+import android.content.Intent;
+import android.content.pm.ActivityInfo;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.annotation.ColorRes;
@@ -8,18 +10,23 @@ import android.support.annotation.Nullable;
 import android.support.design.widget.TabLayout;
 import android.support.v4.view.ViewCompat;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import com.github.wyang.klinechartlib.huobi.data.Candle;
-import com.github.wyang.klinechartlib.huobi.data.BarLineSet;
+import com.chad.library.adapter.base.BaseQuickAdapter;
+import com.chad.library.adapter.base.BaseViewHolder;
 import com.github.wyang.klinechartdemo.utils.AssetUtil;
-import com.github.wyang.klinechartlib.base.ICandle;
+import com.github.wyang.klinechartdemo.widget.CommonPopupWindow;
 import com.github.wyang.klinechartlib.base.IBarLineSet;
+import com.github.wyang.klinechartlib.base.ICandle;
 import com.github.wyang.klinechartlib.huobi.KLineChartAdapter;
 import com.github.wyang.klinechartlib.huobi.KLineChartView;
+import com.github.wyang.klinechartlib.huobi.data.BarLineSet;
+import com.github.wyang.klinechartlib.huobi.data.Candle;
 import com.github.wyang.klinechartlib.huobi.draw.MainRect;
 
 import org.json.JSONArray;
@@ -33,7 +40,7 @@ import java.util.List;
  */
 public class KLineChartActivity extends AppCompatActivity {
     private TextView tv_title;
-    private TabLayout mTabLayout1;
+    private TabLayout mTabLayout;
     private KLineChartView mKLineChartView;
     private KLineChartAdapter mAdapter;
 
@@ -43,10 +50,12 @@ public class KLineChartActivity extends AppCompatActivity {
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        //设置竖屏Activity
+        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         setContentView(R.layout.activity_k_line);
 
         tv_title = findViewById(R.id.tv_title);
-        mTabLayout1 = findViewById(R.id.mTabLayout1);
+        mTabLayout = findViewById(R.id.mTabLayout);
         mKLineChartView = findViewById(R.id.mKLineChartView);
         tv_buy = findViewById(R.id.tv_buy);
         tv_sell = findViewById(R.id.tv_sell);
@@ -58,29 +67,29 @@ public class KLineChartActivity extends AppCompatActivity {
                 getResources().getColorStateList(R.color.chart_red));
         ViewCompat.setBackgroundTintList(tv_sell,
                 getResources().getColorStateList(R.color.chart_green));
-        mTabLayout1.addTab(mTabLayout1.newTab().setText(getString(R.string.k_line_tab01)));
-        mTabLayout1.addTab(mTabLayout1.newTab().setText(getString(R.string.k_line_tab02)));
-        mTabLayout1.addTab(mTabLayout1.newTab().setText(getString(R.string.k_line_tab03)));
-        mTabLayout1.addTab(mTabLayout1.newTab().setText(getString(R.string.k_line_tab04)));
-        mTabLayout1.addTab(mTabLayout1.newTab().setText(getString(R.string.k_line_tab05)));
+        mTabLayout.addTab(mTabLayout.newTab().setText(getString(R.string.k_line_tab01)));
+        mTabLayout.addTab(mTabLayout.newTab().setText(getString(R.string.k_line_tab02)));
+        mTabLayout.addTab(mTabLayout.newTab().setText(getString(R.string.k_line_tab03)));
+        mTabLayout.addTab(mTabLayout.newTab().setText(getString(R.string.k_line_tab04)));
+        mTabLayout.addTab(mTabLayout.newTab().setText(getString(R.string.k_line_tab05)));
 
         //添加选择更多Tab
-        mTabLayout1.addTab(mTabLayout1.newTab().setCustomView(R.layout.item_tab_k_line_more));
-        TabLayout.Tab tab5 = mTabLayout1.getTabAt(posMore);
+        mTabLayout.addTab(mTabLayout.newTab().setCustomView(R.layout.item_tab_k_line_more));
+        TabLayout.Tab tab5 = mTabLayout.getTabAt(posMore);
         if (tab5 != null && tab5.getCustomView() != null) {
             tab5.getCustomView().setOnClickListener(v -> onClickMore());
             tv_label = tab5.getCustomView().findViewById(R.id.tv_label);
             iv_label = tab5.getCustomView().findViewById(R.id.iv_label);
         }
         //添加设置指标线Tab
-        mTabLayout1.addTab(mTabLayout1.newTab().setCustomView(R.layout.item_tab_k_line_setting));
-        TabLayout.Tab tab6 = mTabLayout1.getTabAt(posSetting);
+        mTabLayout.addTab(mTabLayout.newTab().setCustomView(R.layout.item_tab_k_line_setting));
+        TabLayout.Tab tab6 = mTabLayout.getTabAt(posSetting);
         if (tab6 != null && tab6.getCustomView() != null) {
             tab6.getCustomView().setOnClickListener(v -> onClickSetting());
             iv_setting = tab6.getCustomView().findViewById(R.id.iv_label);
         }
 
-        mTabLayout1.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
+        mTabLayout.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
             @Override
             public void onTabSelected(TabLayout.Tab tab) {
                 if (tab.getPosition() < posMore) {
@@ -108,7 +117,7 @@ public class KLineChartActivity extends AppCompatActivity {
 
             }
         });
-        TabLayout.Tab tab = mTabLayout1.getTabAt(0);
+        TabLayout.Tab tab = mTabLayout.getTabAt(0);
         if (tab != null)
             tab.select();
 
@@ -148,10 +157,23 @@ public class KLineChartActivity extends AppCompatActivity {
         ViewCompat.setBackgroundTintList(iv_setting, getResources().getColorStateList(resId));
     }
 
+    private ItemTabAdapter mainItemTabAdapter = new ItemTabAdapter();
+    private ItemTabAdapter subItemTabAdapter = new ItemTabAdapter();
 
     public void onClickSetting() {
+        CommonPopupWindow popupWindow = new CommonPopupWindow.Builder(this)
+                .setView(R.layout.popup_setting)
+                .setOutsideTouchable(true)
+                .setWidthAndHeight(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+                .setViewOnclickListener((view, layoutResId) -> {
+                    RecyclerView rv_main = view.findViewById(R.id.rv_main);
+                    rv_main.setAdapter(mainItemTabAdapter);
+                    RecyclerView rv_sub = view.findViewById(R.id.rv_sub);
+                    rv_sub.setAdapter(subItemTabAdapter);
+                })
+                .create();
+        popupWindow.showAsDropDown(mTabLayout);
     }
-
 
     private void initKLineData(Context context) {
         List<ICandle> candles = new ArrayList<>();
@@ -170,12 +192,39 @@ public class KLineChartActivity extends AppCompatActivity {
         mainBarLineSets.add(maLine);
         mainBarLineSets.add(bollLine);
 
-        List<IBarLineSet> childBarLineSets = new ArrayList<>();
+        for (IBarLineSet barLineSet : mainBarLineSets) {
+            mainItemTabAdapter.addData(barLineSet.getName());
+        }
 
-        BarLineSet volumeLine = new BarLineSet("VOL");
+        List<IBarLineSet> child1BarLineSets = new ArrayList<>();
+
+        BarLineSet volumeLine = new BarLineSet("成交量");
         volumeLine.addLine(0xFFDA8AE5, "MA5:");
         volumeLine.addLine(0xFF39B0E8, "MA10:");
-        childBarLineSets.add(volumeLine);
+        child1BarLineSets.add(volumeLine);
+
+
+        List<IBarLineSet> child2BarLineSets = new ArrayList<>();
+
+        BarLineSet macdLine = new BarLineSet("MACD");
+        child2BarLineSets.add(macdLine);
+
+
+        BarLineSet kdjLine = new BarLineSet("KDJ");
+        child2BarLineSets.add(kdjLine);
+
+
+        BarLineSet rsiLine = new BarLineSet("RSI");
+        child2BarLineSets.add(rsiLine);
+
+
+        BarLineSet wrLine = new BarLineSet("WR");
+        child2BarLineSets.add(wrLine);
+
+        for (IBarLineSet barLineSet : child2BarLineSets) {
+            subItemTabAdapter.addData(barLineSet.getName());
+        }
+
 
         try {
             String json = AssetUtil.readAsset(context, "test.json");
@@ -283,24 +332,46 @@ public class KLineChartActivity extends AppCompatActivity {
 
         mAdapter.setData(candles);
         mAdapter.setMainLineSets(mainBarLineSets);
-        mAdapter.setChildLineSets(childBarLineSets);
+        mAdapter.setChild1LineSets(child1BarLineSets);
+        mAdapter.setChild1LineSets(child2BarLineSets);
 
+        ICandle candle = mAdapter.getCandle(mAdapter.getCount() - 1);
+        original = candle.getClose();
 
-        mHandler.postDelayed(runnable, 1000);
+        //mHandler.postDelayed(runnable, 1000);
     }
 
+    private float original;
     private Handler mHandler = new Handler();
     private Runnable runnable = new Runnable() {
         @Override
         public void run() {
-            float v = (float) (Math.random() * 50 - 25);
+            float v = (float) (Math.random() * 10 - 5);
             Candle candle = (Candle) mAdapter.getCandle(mAdapter.getCount() - 1);
-            candle.close = 8160 + v;
-            candle.volume += 50000;
+            candle.close = original + v;
+            candle.volume += 1;
 
             mAdapter.notifyDataSetInvalidated();
 
             mHandler.postDelayed(this, 1000);
         }
     };
+
+    public void onLandscape(View view) {
+        startActivity(new Intent(this, KLineChartLandActivity.class));
+    }
+
+    public static class ItemTabAdapter extends BaseQuickAdapter<String, BaseViewHolder> {
+        private int selectPosition = 0;
+
+        public ItemTabAdapter() {
+            super(R.layout.item_tab);
+        }
+
+        @Override
+        protected void convert(BaseViewHolder helper, String item) {
+            helper.setText(R.id.tv_label, item);
+            helper.getView(R.id.tv_label).setSelected(selectPosition == helper.getAdapterPosition());
+        }
+    }
 }

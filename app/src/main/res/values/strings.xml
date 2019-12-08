@@ -14,4 +14,18 @@
         <item>1周</item>
         <item>1月</item>
     </string-array>
+
+    <string name="k_tab1">分时</string>
+    <string name="k_tab2">1分钟</string>
+    <string name="k_tab3">5分钟</string>
+    <string name="k_tab4">15分钟</string>
+    <string name="k_tab5">30分钟</string>
+    <string name="k_tab6">1小时</string>
+    <string name="k_tab7">4小时</string>
+    <string name="k_tab8">1天</string>
+    <string name="k_tab9">1周</string>
+    <string name="k_tab10">1月</string>
+
+    <string name="main_view">主图</string>
+    <string name="sub_view">副图</string>
 </resources>

@@ -35,5 +35,8 @@ dependencies {
     api "com.android.support:design:$supportVersion"
     api 'com.android.support.constraint:constraint-layout:1.1.3'
 
+    implementation 'com.github.CymChad:BaseRecyclerViewAdapterHelper:2.9.44'
+
+
     api project(path: ':klinechartlib')
 }

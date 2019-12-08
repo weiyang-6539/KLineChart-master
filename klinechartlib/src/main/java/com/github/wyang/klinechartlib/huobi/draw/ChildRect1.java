@@ -14,13 +14,12 @@ import com.github.wyang.klinechartlib.utils.PointFPool;
 
 import java.util.List;
 
-
 /**
  * Created by fxb on 2019-11-04.
  */
-public class ChildRect extends ChartRect {
+public class ChildRect1 extends ChartRect {
 
-    public ChildRect(KLineChartView chart, LinePathHelper helper) {
+    public ChildRect1(KLineChartView chart, LinePathHelper helper) {
         super(chart, helper);
     }
 
@@ -47,32 +46,40 @@ public class ChildRect extends ChartRect {
             mHelper.move(i);
         }
 
-        List<Path> paths = mHelper.getPaths();
-        for (int i = 0; i < paths.size(); i++) {
-            mChart.drawLinePath(canvas, paths.get(i), barLineSet.getLineColor(i));
+        if (barLineSet != null) {
+            List<Path> paths = mHelper.getPaths();
+            for (int i = 0; i < paths.size(); i++) {
+                mChart.drawLinePath(canvas, paths.get(i), barLineSet.getLineColor(i));
+            }
+            mHelper.restore();
+
+            int selectedIndex = mChart.getSelectedIndex();
+            String text;
+            PointF p = PointFPool.get(0, getTop());
+            for (int i = 0; i < barLineSet.getLineSize(); i++) {
+                Float rst = barLineSet.getLine(i).get(selectedIndex == -1 ? mAdapter.getCount() - 1 : selectedIndex);
+                if (rst == null)
+                    continue;
+
+                text = barLineSet.getLabel(i) + mChart.getPriceFormatter().format(rst);
+                mChart.drawText(canvas, text, p, barLineSet.getLineColor(i));
+
+                p.x += mChart.getTextPaint().measureText(text) + 5;
+                p.y = getTop();
+            }
+            PointFPool.recycle(p);
         }
-        mHelper.restore();
-
-        int selectedIndex = mChart.getSelectedIndex();
-        String text;
-        PointF p = PointFPool.get(0, getTop());
-        for (int i = 0; i < barLineSet.getLineSize(); i++) {
-            Float rst = barLineSet.getLine(i).get(selectedIndex == -1 ? mAdapter.getCount() - 1 : selectedIndex);
-            if (rst == null)
-                continue;
-
-            text = barLineSet.getLabel(i) + mChart.getPriceFormatter().format(rst);
-            mChart.drawText(canvas, text, p, barLineSet.getLineColor(i));
-
-            p.x += mChart.getTextPaint().measureText(text) + 5;
-            p.y = getTop();
-        }
-        PointFPool.recycle(p);
     }
 
     @Override
     public void updateMaxMinValue(ICandle data, int index) {
         maxValue = Math.max(maxValue, data.getVolume());
         minValue = 0;
+
+        IBarLineSet barLineSet = mChart.getAdapter().getChild1LineSet();
+        if (barLineSet != null) {
+            maxValue = Math.max(barLineSet.getMax(index), maxValue);
+            minValue = Math.min(barLineSet.getMin(index), minValue);
+        }
     }
 }

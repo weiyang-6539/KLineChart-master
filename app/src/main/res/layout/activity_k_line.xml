@@ -4,12 +4,13 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#1d1f26"
+    android:background="#151E2F"
     android:orientation="vertical">
 
     <FrameLayout
         android:layout_width="match_parent"
-        android:layout_height="50dp">
+        android:layout_height="50dp"
+        android:elevation="4dp">
 
         <ImageButton
             android:layout_width="wrap_content"
@@ -17,6 +18,8 @@
             android:adjustViewBounds="true"
             android:background="@null"
             android:onClick="onBack"
+            android:padding="15dp"
+            android:scaleType="fitCenter"
             android:src="@drawable/ic_back" />
 
         <TextView
@@ -27,6 +30,18 @@
             android:textColor="@android:color/white"
             android:textSize="19sp"
             tools:text="BTC/USDT" />
+
+        <ImageButton
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_gravity="right|end"
+            android:adjustViewBounds="true"
+            android:background="@null"
+            android:onClick="onLandscape"
+            android:padding="15dp"
+            android:scaleType="fitCenter"
+            android:src="@drawable/ic_land"
+            tools:ignore="RtlHardcoded" />
     </FrameLayout>
 
     <com.github.wyang.klinechartdemo.widget.ObservableScrollView
@@ -155,9 +170,10 @@
                 android:background="#222" />
 
             <android.support.design.widget.TabLayout
-                android:id="@+id/mTabLayout1"
+                android:id="@+id/mTabLayout"
                 android:layout_width="match_parent"
                 android:layout_height="35dp"
+                android:background="#151E2F"
                 app:tabBackground="@android:color/transparent"
                 app:tabIndicatorColor="@color/theme0xff"
                 app:tabIndicatorHeight="2dp"
@@ -172,7 +188,7 @@
                 android:id="@+id/mKLineChartView"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:background="#202326" />
+                android:background="#151E2F" />
 
             <android.support.v4.widget.Space
                 android:layout_width="wrap_content"

@@ -53,9 +53,6 @@ public class MainRect extends ChartRect {
 
     public MainRect(KLineChartView chart, LinePathHelper helper) {
         super(chart, helper);
-
-        rows = 3;
-        column = 5;
     }
 
     @Override
@@ -66,9 +63,9 @@ public class MainRect extends ChartRect {
         PointF lineP2 = PointFPool.get(0, 0);
 
         KLineChartAdapter mAdapter = mChart.getAdapter();
-        IBarLineSet lineSet = mAdapter.getMainLineSet();
+        IBarLineSet barLineSet = mAdapter.getMainLineSet();
 
-        mHelper.save(this, lineSet);
+        mHelper.save(this, barLineSet);
 
         int startIndex = mChart.getStartIndex();
         int endIndex = mChart.getEndIndex();
@@ -132,10 +129,10 @@ public class MainRect extends ChartRect {
         PointFPool.recycle(lineP1);
         PointFPool.recycle(lineP2);
 
-        //先画线
+        //先画线#5776AD
         if (isLine()) {
-            mChart.drawLinePath(canvas, linePath, 0xFF516CA2);
-            LinearGradient shader = new LinearGradient(0, 0, 0, getMinAxisY(), 0x44516CA2, 0x11516CA2, Shader.TileMode.CLAMP);
+            mChart.drawLinePath(canvas, linePath, 0xFF5776AD);
+            LinearGradient shader = new LinearGradient(0, 0, 0, getMinAxisY(), 0x335776AD, 0x005776AD, Shader.TileMode.CLAMP);
 
             linePath.lineTo(getAxisX(endIndex), getMinAxisY());
             linePath.lineTo(getAxisX(startIndex), getMinAxisY());
@@ -144,25 +141,27 @@ public class MainRect extends ChartRect {
         } else {
             List<Path> paths = mHelper.getPaths();
             for (int i = 0; i < paths.size(); i++) {
-                mChart.drawLinePath(canvas, paths.get(i), lineSet.getLineColor(i));
+                mChart.drawLinePath(canvas, paths.get(i), barLineSet.getLineColor(i));
             }
             mHelper.restore();
 
-            int selectedIndex = mChart.getSelectedIndex();
-            String text;
-            PointF p = PointFPool.get(0, 0);
-            for (int i = 0; i < lineSet.getLineSize(); i++) {
-                Float rst = lineSet.getLine(i).get(selectedIndex == -1 ? mAdapter.getCount() - 1 : selectedIndex);
-                if (rst == null)
-                    continue;
+            if (barLineSet != null) {
+                int selectedIndex = mChart.getSelectedIndex();
+                String text;
+                PointF p = PointFPool.get(0, 0);
+                for (int i = 0; i < barLineSet.getLineSize(); i++) {
+                    Float rst = barLineSet.getLine(i).get(selectedIndex == -1 ? mAdapter.getCount() - 1 : selectedIndex);
+                    if (rst == null)
+                        continue;
 
-                text = lineSet.getLabel(i) + mChart.getPriceFormatter().format(rst);
-                mChart.drawText(canvas, text, p, lineSet.getLineColor(i));
+                    text = barLineSet.getLabel(i) + mChart.getPriceFormatter().format(rst);
+                    mChart.drawText(canvas, text, p, barLineSet.getLineColor(i));
 
-                p.x += mChart.getTextPaint().measureText(text) + 5;
-                p.y = 0;
+                    p.x += mChart.getTextPaint().measureText(text) + 5;
+                    p.y = 0;
+                }
+                PointFPool.recycle(p);
             }
-            PointFPool.recycle(p);
         }
 
         //绘制最大最小值
@@ -213,8 +212,11 @@ public class MainRect extends ChartRect {
             maxValue = Math.max(data.getHigh(), maxValue);
             minValue = Math.min(data.getLow(), minValue);
 
-            maxValue = Math.max(mChart.getAdapter().getMainLineSet().getMax(index), maxValue);
-            minValue = Math.min(mChart.getAdapter().getMainLineSet().getMin(index), minValue);
+            IBarLineSet barLineSet = mChart.getAdapter().getMainLineSet();
+            if (barLineSet != null) {
+                maxValue = Math.max(barLineSet.getMax(index), maxValue);
+                minValue = Math.min(barLineSet.getMin(index), minValue);
+            }
 
             maxPrice = Math.max(data.getHigh(), maxPrice);
             minPrice = Math.min(data.getLow(), minPrice);

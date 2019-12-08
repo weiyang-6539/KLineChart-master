@@ -428,10 +428,12 @@ public abstract class BaseChartView<T extends ChartAdapter> extends ViewGroup im
             mOffsetX = getMaxOffsetX();
         }
 
+        isLongPress = false;
         invalidate();
     }
 
     private void notifyInvalidated() {
+        isLongPress = false;
         invalidate();
     }
 

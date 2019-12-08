@@ -24,7 +24,8 @@ import com.github.wyang.klinechartlib.base.ICandle;
 import com.github.wyang.klinechartlib.formatter.DateFormatter;
 import com.github.wyang.klinechartlib.formatter.PriceFormatter;
 import com.github.wyang.klinechartlib.formatter.VolumeFormatter;
-import com.github.wyang.klinechartlib.huobi.draw.ChildRect;
+import com.github.wyang.klinechartlib.huobi.draw.ChildRect1;
+import com.github.wyang.klinechartlib.huobi.draw.ChildRect2;
 import com.github.wyang.klinechartlib.huobi.draw.MainRect;
 import com.github.wyang.klinechartlib.huobi.helper.LinePathHelper;
 import com.github.wyang.klinechartlib.huobi.helper.TextDrawHelper;
@@ -103,16 +104,19 @@ public class KLineChartView extends BaseChartView<KLineChartAdapter> {
 
     private LinePathHelper mLinePathHelper;
     private MainRect mMainRect;
-    private ChildRect mChildRect1;
-    private ChildRect mChildRect2;
+    private ChildRect1 mChildRect1;
+    private ChildRect2 mChildRect2;
 
     private boolean isBottomAxisX = true;//x轴绘制于View的底部，反之则在主图底部
+    private boolean isShowChild2 = true;//是否显示副图
 
     private IValueFormatter mPriceFormatter;
     private IDateFormatter mDateFormatter;
     private IValueFormatter mVolumeFormatter;
 
     private ValueAnimator mBeatAnimator;
+
+    private RadialGradient circleGradient;
 
     public KLineChartView(Context context) {
         this(context, null);
@@ -134,8 +138,8 @@ public class KLineChartView extends BaseChartView<KLineChartAdapter> {
         mLinePathHelper = new LinePathHelper();
 
         mMainRect = new MainRect(this, mLinePathHelper);
-        mChildRect1 = new ChildRect(this, mLinePathHelper);
-        mChildRect2 = new ChildRect(this, mLinePathHelper);
+        mChildRect1 = new ChildRect1(this, mLinePathHelper);
+        mChildRect2 = new ChildRect2(this, mLinePathHelper);
 
         mMainRect.setTopSpacing(getTopSpacing() * 2);
         mChildRect1.setTopSpacing(getTopSpacing());
@@ -155,8 +159,8 @@ public class KLineChartView extends BaseChartView<KLineChartAdapter> {
 
         mCirclePaint.setColor(0xffffffff);
 
-        mBeatAnimator = ValueAnimator.ofInt(5, 15);
-        mBeatAnimator.setDuration(2000);
+        mBeatAnimator = ValueAnimator.ofFloat(0, 1);
+        mBeatAnimator.setDuration(500);
         mBeatAnimator.setRepeatCount(ValueAnimator.INFINITE);
         mBeatAnimator.setRepeatMode(ValueAnimator.REVERSE);
         mBeatAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
@@ -165,6 +169,7 @@ public class KLineChartView extends BaseChartView<KLineChartAdapter> {
                 invalidate();
             }
         });
+        mBeatAnimator.start();
     }
 
     private void initAttrs(Context context, AttributeSet attrs) {
@@ -200,7 +205,6 @@ public class KLineChartView extends BaseChartView<KLineChartAdapter> {
     }
 
     public void initPartRect() {
-
         float mGridHeight = mHeight - mMainRect.getTopSpacing() - getAxisXHeight();
 
         float avg = mGridHeight * 1f / mGridRows;
@@ -208,16 +212,18 @@ public class KLineChartView extends BaseChartView<KLineChartAdapter> {
         float left = 0;
         float top = 0;
         float right = mWidth;
-        float bottom = top + (mGridRows - 2) * avg + mMainRect.getTopSpacing();
+        float bottom = top + (mGridRows - (isShowChild2 ? 2 : 1)) * avg + mMainRect.getTopSpacing();
         mMainRect.setBounds(left, top, right, bottom);
 
         top = mMainRect.getBottom() + (!isBottomAxisX ? getAxisXHeight() : 0);
         bottom = top + avg;
         mChildRect1.setBounds(left, top, right, bottom);
 
-        top = mChildRect1.getBottom();
-        bottom = top + avg;
-        mChildRect2.setBounds(left, top, right, bottom);
+        if (isShowChild2) {
+            top = mChildRect1.getBottom();
+            bottom = top + avg;
+            mChildRect2.setBounds(left, top, right, bottom);
+        }
     }
 
     @Override
@@ -247,7 +253,9 @@ public class KLineChartView extends BaseChartView<KLineChartAdapter> {
 
         mMainRect.draw(canvas);
         mChildRect1.draw(canvas);
-        mChildRect2.draw(canvas);
+
+        if (isShowChild2)
+            mChildRect2.draw(canvas);
 
         //绘制坐标轴文本
         drawAxisText(canvas);
@@ -287,26 +295,29 @@ public class KLineChartView extends BaseChartView<KLineChartAdapter> {
 
         if (mMainRect != null)
             mMainRect.fixMaxMin();
+
     }
 
     private void drawGrid(Canvas canvas) {
         //横向的grid
         float rowSpace = 1.0f * (mMainRect.getMinAxisY() - mMainRect.getMaxAxisY()) / (mGridRows - 2);
-        for (int i = 0; i <= mGridRows - 2; i++) {
+        for (int i = 0; i <= mGridRows - (isShowChild2 ? 2 : 1); i++) {
             canvas.drawLine(0, rowSpace * i + mMainRect.getMaxAxisY(), mWidth, rowSpace * i + mMainRect.getMaxAxisY(), mGridPaint);
         }
         //-----------------------下方子图------------------------
         if (!isBottomAxisX)
             canvas.drawLine(0, mChildRect1.getTop(), mWidth, mChildRect1.getTop(), mGridPaint);
         canvas.drawLine(0, mChildRect1.getMinAxisY(), mWidth, mChildRect1.getMinAxisY(), mGridPaint);
-        canvas.drawLine(0, mChildRect2.getMinAxisY(), mWidth, mChildRect2.getMinAxisY(), mGridPaint);
+        if (isShowChild2)
+            canvas.drawLine(0, mChildRect2.getMinAxisY(), mWidth, mChildRect2.getMinAxisY(), mGridPaint);
 
         //纵向的grid
         float columnSpace = 1.0f * mWidth / mGridColumns;
         for (int i = 1; i < mGridColumns; i++) {
             canvas.drawLine(columnSpace * i, 0, columnSpace * i, mMainRect.getMinAxisY(), mGridPaint);
             canvas.drawLine(columnSpace * i, mChildRect1.getTop(), columnSpace * i, mChildRect1.getBottom(), mGridPaint);
-            canvas.drawLine(columnSpace * i, mChildRect2.getTop(), columnSpace * i, mChildRect2.getBottom(), mGridPaint);
+            if (isShowChild2)
+                canvas.drawLine(columnSpace * i, mChildRect2.getTop(), columnSpace * i, mChildRect2.getBottom(), mGridPaint);
         }
     }
 
@@ -416,12 +427,15 @@ public class KLineChartView extends BaseChartView<KLineChartAdapter> {
             //分时线时，绘制小圆点
             if (mMainRect.isLine() && isLastVisible()) {
                 float x = getDrawX(mEndIndex);
-                RadialGradient radialGradient = new RadialGradient(x, closeY, 15, 0x88ffffff, 0x11ffffff, Shader.TileMode.CLAMP);
-                mCirclePaint.setShader(radialGradient);
-                int value = (int) mBeatAnimator.getAnimatedValue();
-                log("绘制，value=" + value);
-                canvas.drawCircle(x, closeY, value, mCirclePaint);
+
+                circleGradient = new RadialGradient(x, closeY, 1.5f * mPointWidth, 0x66ffffff, 0x00ffffff, Shader.TileMode.CLAMP);
+                float per = (float) mBeatAnimator.getAnimatedValue();
+                mCirclePaint.setShader(circleGradient);
+                mCirclePaint.setAlpha((int) (0xff * per));
+                canvas.drawCircle(x, closeY, 1.5f * mPointWidth, mCirclePaint);
+
                 mCirclePaint.setShader(null);
+                mCirclePaint.setAlpha(0xff);
                 canvas.drawCircle(x, closeY, 5, mCirclePaint);
             }
 
@@ -722,6 +736,16 @@ public class KLineChartView extends BaseChartView<KLineChartAdapter> {
         return mTextDrawHelper.getTextHeight(mTextPaint);
     }
 
+    public void setBottomAxisX(boolean bottomAxisX) {
+        isBottomAxisX = bottomAxisX;
+    }
+
+    public void setShowChild2(boolean isShowChild2) {
+        this.isShowChild2 = isShowChild2;
+
+        initPartRect();
+    }
+
     /**
      * x轴的高度，高亮文本画笔textSize略大于默认文本画笔的textSize
      */
@@ -731,7 +755,12 @@ public class KLineChartView extends BaseChartView<KLineChartAdapter> {
 
     public void setMode(@MainRect.Mode int mode) {
         mMainRect.setMode(mode);
-        postInvalidate();
+
+        if (isLine())
+            mScaleX = 0.7f;
+        else
+            mScaleX = 1.0f;
+        mAdapter.notifyDataSetChanged();
     }
 
     public IValueFormatter getPriceFormatter() {
