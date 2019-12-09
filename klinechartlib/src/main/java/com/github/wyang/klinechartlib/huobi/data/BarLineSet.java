@@ -17,6 +17,18 @@ public class BarLineSet implements IBarLineSet {
      */
     private String name;
     /**
+     * 是否显示名称
+     */
+    private boolean isShowName;
+    /**
+     * bar数据对应标签
+     */
+    private String barLabel;
+    /**
+     * 用于绘制矩形的值
+     */
+    private List<Float> barData = new ArrayList<>();
+    /**
      * 线的颜色
      */
     private SparseIntArray colors = new SparseIntArray();
@@ -29,13 +41,40 @@ public class BarLineSet implements IBarLineSet {
      */
     private SparseArray<List<Float>> lines = new SparseArray<>();
 
-    public BarLineSet(String name) {
+    public BarLineSet(String name, String barLabel) {
         this.name = name;
+        this.barLabel = barLabel;
+    }
+
+    public BarLineSet(String name, boolean isShowName, String barLabel) {
+        this.name = name;
+        this.isShowName = isShowName;
+        this.barLabel = barLabel;
     }
 
     @Override
     public String getName() {
         return name;
+    }
+
+    @Override
+    public boolean showName() {
+        return isShowName;
+    }
+
+    @Override
+    public String getBarLabel() {
+        return barLabel;
+    }
+
+    @Override
+    public void addBarData(Float data) {
+        barData.add(data);
+    }
+
+    @Override
+    public List<Float> getBarData() {
+        return barData;
     }
 
     @Override

@@ -9,6 +9,14 @@ public interface IBarLineSet {
 
     String getName();
 
+    boolean showName();
+
+    String getBarLabel();
+
+    void addBarData(Float data);
+
+    List<Float> getBarData();
+
     void addLine(int color, String label);
 
     int getLineColor(int index);

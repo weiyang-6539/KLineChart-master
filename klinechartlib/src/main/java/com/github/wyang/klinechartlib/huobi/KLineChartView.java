@@ -96,9 +96,9 @@ public class KLineChartView extends BaseChartView<KLineChartAdapter> {
     private int fallFill = 1;
     private int fillMode = riseFill | fallFill;
     @ColorInt
-    private int colorRise;//默认涨的颜色
+    private int colorRise;//涨的颜色
     @ColorInt
-    private int colorFall;//默认跌的颜色
+    private int colorFall;//跌的颜色
 
     private TextDrawHelper mTextDrawHelper;
 
@@ -300,7 +300,7 @@ public class KLineChartView extends BaseChartView<KLineChartAdapter> {
 
     private void drawGrid(Canvas canvas) {
         //横向的grid
-        float rowSpace = 1.0f * (mMainRect.getMinAxisY() - mMainRect.getMaxAxisY()) / (mGridRows - 2);
+        float rowSpace = 1.0f * (mMainRect.getMinAxisY() - mMainRect.getMaxAxisY()) / (mGridRows - (isShowChild2 ? 2 : 1));
         for (int i = 0; i <= mGridRows - (isShowChild2 ? 2 : 1); i++) {
             canvas.drawLine(0, rowSpace * i + mMainRect.getMaxAxisY(), mWidth, rowSpace * i + mMainRect.getMaxAxisY(), mGridPaint);
         }
@@ -344,7 +344,7 @@ public class KLineChartView extends BaseChartView<KLineChartAdapter> {
      * macd蜡烛图始终为实心柱子
      */
     public void drawFillCandle(Canvas canvas, float x, float top, float bottom, boolean isRise) {
-        tempRect.set(x - mCandleWidth / 2, top, x + mCandleWidth / 2, bottom);
+        tempRect.set(x - mCandleWidth * mScaleX * .5f, top, x + mCandleWidth * mScaleX * .5f, bottom);
         mCandlePaint.setStyle(Paint.Style.FILL);
         mCandlePaint.setColor(isRise ? colorRise : colorFall);
         canvas.drawRect(tempRect, mCandlePaint);

@@ -157,12 +157,12 @@ public class KLineChartLandActivity extends AppCompatActivity {
         List<ICandle> candles = new ArrayList<>();
         List<IBarLineSet> mainBarLineSets = new ArrayList<>();
 
-        BarLineSet maLine = new BarLineSet("MA");
+        BarLineSet maLine = new BarLineSet("MA", "");
         maLine.addLine(color1, "MA5:");
         maLine.addLine(color2, "MA10:");
         maLine.addLine(color3, "MA30:");
 
-        BarLineSet bollLine = new BarLineSet("BOLL");
+        BarLineSet bollLine = new BarLineSet("BOLL", "");
         bollLine.addLine(color1, "BOLL:");//中轨线
         bollLine.addLine(color2, "UB:");//上轨线
         bollLine.addLine(color3, "LB:");//下轨线
@@ -172,29 +172,29 @@ public class KLineChartLandActivity extends AppCompatActivity {
 
         List<IBarLineSet> child1BarLineSets = new ArrayList<>();
 
-        BarLineSet volumeLine = new BarLineSet("成交量");
+        BarLineSet volumeLine = new BarLineSet("VOL", "VOL:");
         volumeLine.addLine(color1, "MA5:");
         volumeLine.addLine(color2, "MA10:");
         child1BarLineSets.add(volumeLine);
 
         List<IBarLineSet> child2BarLineSets = new ArrayList<>();
 
-        BarLineSet macdLine = new BarLineSet("MACD");
+        BarLineSet macdLine = new BarLineSet("MACD(12,26,9)", true, "MACD:");
         macdLine.addLine(color1, "DIF:");
         macdLine.addLine(color2, "DEA:");
         child2BarLineSets.add(macdLine);
 
-        BarLineSet kdjLine = new BarLineSet("KDJ(14,1,3)");
+        BarLineSet kdjLine = new BarLineSet("KDJ(14,1,3)", true, "");
         kdjLine.addLine(color1, "K:");
         kdjLine.addLine(color2, "D:");
         kdjLine.addLine(color3, "J:");
         child2BarLineSets.add(kdjLine);
 
-        BarLineSet rsiLine = new BarLineSet("RSI");
+        BarLineSet rsiLine = new BarLineSet("RSI", "");
         rsiLine.addLine(color1, "RSI(14):");
         child2BarLineSets.add(rsiLine);
 
-        BarLineSet wrLine = new BarLineSet("WR");
+        BarLineSet wrLine = new BarLineSet("WR", "");
         wrLine.addLine(color1, "WR(14):");
         child2BarLineSets.add(wrLine);
 
@@ -240,7 +240,7 @@ public class KLineChartLandActivity extends AppCompatActivity {
                 entity.time = arr.getLong(4);
                 entity.volume = (float) arr.getDouble(5);
                 entity.total = entity.volume * entity.close;
-                entity.changeValue = entity.open - entity.close;
+                entity.changeValue = entity.close - entity.open;
                 //计算涨跌幅
                 String per = format.format((entity.close - entity.open) / entity.open);
                 entity.changePercent = per.startsWith("-") ? per : "+" + per;
@@ -299,6 +299,8 @@ public class KLineChartLandActivity extends AppCompatActivity {
                     bollLine.getLine(2).add(ma20 / 20 - 2f * md);
                 }
 
+                //计算成交量
+                volumeLine.addBarData(entity.getVolume());
                 volMa5 += entity.getVolume();
                 if (i < 4) {
                     volumeLine.getLine(0).add(null);
@@ -333,6 +335,7 @@ public class KLineChartLandActivity extends AppCompatActivity {
                 dif = ema12 - ema26;
                 dea = dea * 8f / 10f + dif * 2f / 10f;
                 macd = (dif - dea) * 2f;
+                macdLine.addBarData(macd);
                 macdLine.getLine(0).add(dif);
                 macdLine.getLine(1).add(dea);
 
@@ -427,5 +430,8 @@ public class KLineChartLandActivity extends AppCompatActivity {
 
     public void onHideSub(View view) {
         rg_sub.check(View.NO_ID);
+    }
+
+    public void onSetting(View view) {
     }
 }

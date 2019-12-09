@@ -179,12 +179,12 @@ public class KLineChartActivity extends AppCompatActivity {
         List<ICandle> candles = new ArrayList<>();
         List<IBarLineSet> mainBarLineSets = new ArrayList<>();
 
-        BarLineSet maLine = new BarLineSet("MA");
+        BarLineSet maLine = new BarLineSet("MA", "");
         maLine.addLine(0xFFDA8AE5, "MA5:");
         maLine.addLine(0xFF39B0E8, "MA10:");
         maLine.addLine(0xFFFFC76D, "MA30:");
 
-        BarLineSet bollLine = new BarLineSet("BOLL");
+        BarLineSet bollLine = new BarLineSet("BOLL", "");
         bollLine.addLine(0xFFDA8AE5, "BOLL:");//中轨线
         bollLine.addLine(0xFF39B0E8, "UB:");//上轨线
         bollLine.addLine(0xFFFFC76D, "LB:");//下轨线
@@ -198,7 +198,7 @@ public class KLineChartActivity extends AppCompatActivity {
 
         List<IBarLineSet> child1BarLineSets = new ArrayList<>();
 
-        BarLineSet volumeLine = new BarLineSet("成交量");
+        BarLineSet volumeLine = new BarLineSet("VOL", "VOL:");
         volumeLine.addLine(0xFFDA8AE5, "MA5:");
         volumeLine.addLine(0xFF39B0E8, "MA10:");
         child1BarLineSets.add(volumeLine);
@@ -206,25 +206,24 @@ public class KLineChartActivity extends AppCompatActivity {
 
         List<IBarLineSet> child2BarLineSets = new ArrayList<>();
 
-        BarLineSet macdLine = new BarLineSet("MACD");
+        BarLineSet macdLine = new BarLineSet("MACD(12,26,9)", "MACD:");
         child2BarLineSets.add(macdLine);
 
 
-        BarLineSet kdjLine = new BarLineSet("KDJ");
+        BarLineSet kdjLine = new BarLineSet("KDJ", "");
         child2BarLineSets.add(kdjLine);
 
 
-        BarLineSet rsiLine = new BarLineSet("RSI");
+        BarLineSet rsiLine = new BarLineSet("RSI", "");
         child2BarLineSets.add(rsiLine);
 
 
-        BarLineSet wrLine = new BarLineSet("WR");
+        BarLineSet wrLine = new BarLineSet("WR", "");
         child2BarLineSets.add(wrLine);
 
         for (IBarLineSet barLineSet : child2BarLineSets) {
             subItemTabAdapter.addData(barLineSet.getName());
         }
-
 
         try {
             String json = AssetUtil.readAsset(context, "test.json");

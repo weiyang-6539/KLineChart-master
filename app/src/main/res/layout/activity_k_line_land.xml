@@ -145,8 +145,9 @@
 
         <TextView
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:gravity="center"
             android:text="主图"
             android:textColor="@color/theme0xff"
             android:textSize="14sp" />
@@ -194,8 +195,9 @@
 
         <TextView
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:gravity="center"
             android:text="副图"
             android:textColor="@color/theme0xff"
             android:textSize="14sp" />
@@ -252,10 +254,24 @@
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1"
-            android:adjustViewBounds="true"
             android:background="@null"
             android:onClick="onHideSub"
             android:src="@drawable/selector_stock_setting_eye" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="0.5dp"
+            android:background="@color/chart_grid_line" />
+
+        <ImageButton
+            android:layout_width="match_parent"
+            android:layout_height="35dp"
+            android:background="@null"
+            android:onClick="onSetting"
+            android:padding="5dp"
+            android:scaleType="fitCenter"
+            android:src="@drawable/ic_k_line_tab_setting"
+            android:tint="@color/chart_text" />
     </LinearLayout>
 
     <android.support.design.widget.TabLayout
@@ -284,9 +300,7 @@
         android:layout_marginTop="50dp"
         android:background="#151E2F"
         app:layout_constraintBottom_toTopOf="@id/mTabLayout"
-        app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toLeftOf="@id/ll"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.0" />
+        app:layout_constraintTop_toTopOf="parent" />
 </android.support.constraint.ConstraintLayout>
