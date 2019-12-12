@@ -3,7 +3,6 @@ package com.github.wyang.klinechartlib.base;
 import android.content.Context;
 import android.database.DataSetObserver;
 import android.graphics.Canvas;
-import android.graphics.Paint;
 import android.support.annotation.ColorRes;
 import android.support.annotation.DimenRes;
 import android.support.annotation.Nullable;
@@ -43,7 +42,7 @@ public abstract class BaseChartView<T extends ChartAdapter> extends ViewGroup im
 
     protected int mWidth;
     protected int mHeight;
-    private float aspectRatio = 1.1f;//宽高比
+    private float aspectRatio = 0.95f;//宽高比
 
     private boolean isTouch = false;//触摸动作的标记
     private boolean isLongPress = false;//长按的标记
@@ -318,13 +317,13 @@ public abstract class BaseChartView<T extends ChartAdapter> extends ViewGroup im
      * 更新mScrollX
      */
     private void checkOffsetX() {
-        if (mOffsetX < getMinOffsetX()) {
-            mOffsetX = getMinOffsetX();
-            onLeftSide();
-        }
         if (mOffsetX > getMaxOffsetX()) {
             mOffsetX = getMaxOffsetX();
             onRightSide();
+        }
+        if (mOffsetX < getMinOffsetX()) {
+            mOffsetX = getMinOffsetX();
+            onLeftSide();
         }
 
         invalidate();
@@ -425,7 +424,14 @@ public abstract class BaseChartView<T extends ChartAdapter> extends ViewGroup im
     private void notifyChanged() {
         if (mAdapter.getCount() > 0) {
             mDataLength = mAdapter.getCount() * mPointWidth * mScaleX;
-            mOffsetX = getMaxOffsetX();
+
+            if (getMinOffsetX() < getMaxOffsetX()) {
+                mOffsetX = getMaxOffsetX();
+                onRightSide();
+            } else {
+                mOffsetX = getMinOffsetX();
+                onLeftSide();
+            }
         }
 
         isLongPress = false;

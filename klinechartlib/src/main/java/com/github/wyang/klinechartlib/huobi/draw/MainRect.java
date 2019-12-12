@@ -157,7 +157,7 @@ public class MainRect extends ChartRect {
                     text = barLineSet.getLabel(i) + mChart.getPriceFormatter().format(rst);
                     mChart.drawText(canvas, text, p, barLineSet.getLineColor(i));
 
-                    p.x += mChart.getTextPaint().measureText(text + "    ");
+                    p.x += mChart.getTextPaint().measureText(text+"    ");
                     p.y = 0;
                 }
                 PointFPool.recycle(p);

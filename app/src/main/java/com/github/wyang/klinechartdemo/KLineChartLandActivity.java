@@ -92,6 +92,7 @@ public class KLineChartLandActivity extends AppCompatActivity {
 
         mKLineChartView = findViewById(R.id.mKLineChartView);
         mKLineChartView.setBottomAxisX(false);
+        mKLineChartView.setDrawGridStartEnd(true);
 
         mAdapter = new KLineChartAdapter();
         mAdapter.bindToChartView(mKLineChartView);
@@ -422,7 +423,6 @@ public class KLineChartLandActivity extends AppCompatActivity {
         mAdapter.setChild1LineSets(child1BarLineSets);
         mAdapter.setChild2LineSets(child2BarLineSets);
     }
-
 
     public void onHideMain(View view) {
         rg_main.check(View.NO_ID);

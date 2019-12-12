@@ -188,7 +188,13 @@
                 android:id="@+id/mKLineChartView"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:background="#151E2F" />
+                android:background="#151E2F"
+                app:kc_icon="@drawable/kline_water_logo" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="10dp"
+                android:background="#0A1623" />
 
             <android.support.v4.widget.Space
                 android:layout_width="wrap_content"

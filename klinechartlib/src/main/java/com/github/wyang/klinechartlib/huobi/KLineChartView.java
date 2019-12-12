@@ -3,6 +3,8 @@ package com.github.wyang.klinechartlib.huobi;
 import android.animation.ValueAnimator;
 import android.content.Context;
 import android.content.res.TypedArray;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.DashPathEffect;
 import android.graphics.LinearGradient;
@@ -13,6 +15,7 @@ import android.graphics.RadialGradient;
 import android.graphics.RectF;
 import android.graphics.Shader;
 import android.support.annotation.ColorInt;
+import android.support.annotation.DrawableRes;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
 
@@ -88,6 +91,10 @@ public class KLineChartView extends BaseChartView<KLineChartAdapter> {
     private float mCandleWidth;//蜡烛的宽
     private float mCandleLineWidth;//蜡烛影线的宽
 
+    private boolean isDrawGridStartEnd;
+    private Bitmap icon;
+    private float iconMargin;
+
     @ColorInt
     private int axisTextColor;
     private int axisYTextPadding;
@@ -131,6 +138,7 @@ public class KLineChartView extends BaseChartView<KLineChartAdapter> {
 
         initAttrs(context, attrs);
 
+        iconMargin = dp2px(5);
         axisYTextPadding = (int) dp2px(5);
 
         mTextDrawHelper = new TextDrawHelper();
@@ -192,6 +200,8 @@ public class KLineChartView extends BaseChartView<KLineChartAdapter> {
             setHighlightColor(typedArray.getColor(R.styleable.KLineChartView_kc_highlight_color, getColor(R.color.chart_highlight)));
             setHighlightSize(typedArray.getDimension(R.styleable.KLineChartView_kc_highlight_size, getDimension(R.dimen.chart_highlight_size)));
 
+            icon = BitmapFactory.decodeResource(getResources(), typedArray.getResourceId(R.styleable.KLineChartView_kc_icon, 0));
+
             setColorRise(getColor(R.color.chart_red));
             setColorFall(getColor(R.color.chart_green));
 
@@ -251,6 +261,10 @@ public class KLineChartView extends BaseChartView<KLineChartAdapter> {
 
         drawGrid(canvas);
 
+        if (icon != null) {
+            canvas.drawBitmap(icon, iconMargin, mMainRect.getMinAxisY() - icon.getHeight() - iconMargin, null);
+        }
+
         mMainRect.draw(canvas);
         mChildRect1.draw(canvas);
 
@@ -300,6 +314,7 @@ public class KLineChartView extends BaseChartView<KLineChartAdapter> {
 
     private void drawGrid(Canvas canvas) {
         //横向的grid
+        canvas.drawLine(0, mMainRect.getTop(), mWidth, mMainRect.getTop(), mGridPaint);
         float rowSpace = 1.0f * (mMainRect.getMinAxisY() - mMainRect.getMaxAxisY()) / (mGridRows - (isShowChild2 ? 2 : 1));
         for (int i = 0; i <= mGridRows - (isShowChild2 ? 2 : 1); i++) {
             canvas.drawLine(0, rowSpace * i + mMainRect.getMaxAxisY(), mWidth, rowSpace * i + mMainRect.getMaxAxisY(), mGridPaint);
@@ -313,7 +328,7 @@ public class KLineChartView extends BaseChartView<KLineChartAdapter> {
 
         //纵向的grid
         float columnSpace = 1.0f * mWidth / mGridColumns;
-        for (int i = 1; i < mGridColumns; i++) {
+        for (int i = isDrawGridStartEnd ? 0 : 1; i <= (isDrawGridStartEnd ? mGridColumns : mGridColumns - 1); i++) {
             canvas.drawLine(columnSpace * i, 0, columnSpace * i, mMainRect.getMinAxisY(), mGridPaint);
             canvas.drawLine(columnSpace * i, mChildRect1.getTop(), columnSpace * i, mChildRect1.getBottom(), mGridPaint);
             if (isShowChild2)
@@ -376,9 +391,8 @@ public class KLineChartView extends BaseChartView<KLineChartAdapter> {
      */
     private void drawAxisText(Canvas canvas) {
         mTextPaint.setColor(axisTextColor);
+        //点对象池取一个PointF对象，用于确定文本位置
         PointF p = PointFPool.get(0, 0);
-
-
         //画x轴文本
         float columnSpace = 1f * mWidth / mGridColumns;
         for (int i = 0; i <= mGridColumns; i++) {
@@ -394,10 +408,9 @@ public class KLineChartView extends BaseChartView<KLineChartAdapter> {
             mTextDrawHelper.drawPointBot(canvas, text, p, mTextPaint);
         }
 
-        //画y轴文本
+        //画y轴 主图文本
         float rowValue = (mMainRect.getMaxValue() - mMainRect.getMinValue()) / (mGridRows - 2);
         float rowSpace = 1.0f * (mMainRect.getMinAxisY() - mMainRect.getMaxAxisY()) / (mGridRows - 2);
-
         for (int i = 0; i <= mGridRows - 2; i++) {
             String text = getPriceFormatter().format(rowValue * (mGridRows - 2 - i) + mMainRect.getMinValue());
 
@@ -405,6 +418,12 @@ public class KLineChartView extends BaseChartView<KLineChartAdapter> {
             p.y = mMainRect.getMaxAxisY() + rowSpace * i;
             mTextDrawHelper.drawPointLeftTop(canvas, text, p, mTextPaint);
         }
+
+        //画y轴 成交量文本
+        String text = getVolumeFormatter().format(mChildRect1.getMaxValue());
+        p.x = mWidth - axisYTextPadding;
+        p.y = mChildRect1.getMaxAxisY();
+        mTextDrawHelper.drawPointLeftTop(canvas, text, p, mTextPaint);
 
         PointFPool.recycle(p);
     }
@@ -630,6 +649,10 @@ public class KLineChartView extends BaseChartView<KLineChartAdapter> {
         }
     }
 
+    public void setDrawGridStartEnd(boolean drawGridStartEnd) {
+        isDrawGridStartEnd = drawGridStartEnd;
+    }
+
     public void setColorRise(@ColorInt int color) {
         this.colorRise = color;
     }
@@ -756,10 +779,13 @@ public class KLineChartView extends BaseChartView<KLineChartAdapter> {
     public void setMode(@MainRect.Mode int mode) {
         mMainRect.setMode(mode);
 
+        float oldScaleX = mScaleX;
         if (isLine())
             mScaleX = 0.7f;
         else
             mScaleX = 1.0f;
+        onScaleChanged(oldScaleX);
+
         mAdapter.notifyDataSetChanged();
     }
 
@@ -787,6 +813,7 @@ public class KLineChartView extends BaseChartView<KLineChartAdapter> {
         if (mVolumeFormatter == null)
             mVolumeFormatter = new VolumeFormatter();
         return mVolumeFormatter;
+
     }
 
     public void setVolumeFormatter(IValueFormatter mVolumeFormatter) {

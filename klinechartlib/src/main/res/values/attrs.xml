@@ -6,6 +6,7 @@
         <attr name="kc_candle_line_width" format="dimension" />
         <attr name="kc_grid_line_width" format="dimension" />
         <attr name="kc_grid_line_color" format="color" />
+        <attr name="kc_icon" format="reference" />
         <attr name="kc_line_width" format="dimension" />
         <attr name="kc_text_color" format="color" />
         <attr name="kc_text_size" format="dimension" />

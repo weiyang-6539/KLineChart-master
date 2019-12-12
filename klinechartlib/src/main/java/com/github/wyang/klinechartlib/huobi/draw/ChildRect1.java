@@ -42,7 +42,7 @@ public class ChildRect1 extends ChartRect {
                 continue;
             ICandle candle = mAdapter.getCandle(i);
             Float rst = barData.get(i);
-            if (rst != null) {
+            if (rst != null && rst != 0) {
                 float x = getAxisX(i);
                 mChart.drawCandle(canvas, x, getAxisY(rst), getAxisY(0), candle.getChangeValue() >= 0);
             }
@@ -90,13 +90,18 @@ public class ChildRect1 extends ChartRect {
 
     @Override
     public void updateMaxMinValue(ICandle data, int index) {
-        maxValue = Math.max(maxValue, data.getVolume());
-        minValue = 0;
-
         IBarLineSet barLineSet = mChart.getAdapter().getChild1LineSet();
         if (barLineSet != null) {
+            List<Float> barData = barLineSet.getBarData();
+            if (!barData.isEmpty()) {
+                maxValue = Math.max(barData.get(index), maxValue);
+                minValue = Math.min(barData.get(index), 0);
+            }
             maxValue = Math.max(barLineSet.getMax(index), maxValue);
-            minValue = Math.min(barLineSet.getMin(index), minValue);
+            minValue = Math.min(barLineSet.getMin(index), 0);
+        } else {
+            maxValue = Float.MIN_VALUE;
+            minValue = Float.MAX_VALUE;
         }
     }
 }

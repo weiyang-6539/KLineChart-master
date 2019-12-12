@@ -15,6 +15,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void start(View view) {
-        startActivity(new Intent(this, KLineChartLandActivity.class));
+        startActivity(new Intent(this, KLineChartActivity.class));
     }
 }

@@ -94,11 +94,16 @@ public class ChildRect2 extends ChartRect {
     public void updateMaxMinValue(ICandle data, int index) {
         IBarLineSet barLineSet = mChart.getAdapter().getChild2LineSet();
         if (barLineSet != null) {
+            List<Float> barData = barLineSet.getBarData();
+            if (!barData.isEmpty()) {
+                maxValue = Math.max(barData.get(index), maxValue);
+                minValue = Math.min(barData.get(index), minValue);
+            }
             maxValue = Math.max(barLineSet.getMax(index), maxValue);
             minValue = Math.min(barLineSet.getMin(index), minValue);
         } else {
-            maxValue = Math.max(maxValue, data.getVolume());
-            minValue = 0;
+            maxValue = Float.MIN_VALUE;
+            minValue = Float.MAX_VALUE;
         }
     }
 }

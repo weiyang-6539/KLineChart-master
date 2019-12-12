@@ -76,7 +76,17 @@ public class TextDrawHelper {
     }
 
     /**
-     * 绘制文本于点的左上方
+     * 绘制文本于点的左下方
+     */
+    public void drawPointLeftBot(Canvas c, String text, PointF p, Paint paint) {
+        p.x -= paint.measureText(text);
+        p.y += getTextHeight(paint) / 2;
+
+        draw(c, text, p, paint);
+    }
+
+    /**
+     * 绘制文本于点的右下方
      */
     public void drawPointRightBot(Canvas c, String text, PointF p, Paint paint) {
         p.y += getTextHeight(paint) / 2;

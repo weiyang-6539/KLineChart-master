@@ -8,6 +8,7 @@ import android.os.Handler;
 import android.support.annotation.ColorRes;
 import android.support.annotation.Nullable;
 import android.support.design.widget.TabLayout;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.view.ViewCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.RecyclerView;
@@ -176,57 +177,56 @@ public class KLineChartActivity extends AppCompatActivity {
     }
 
     private void initKLineData(Context context) {
+        int color1 = ContextCompat.getColor(this, R.color.chart_line1);
+        int color2 = ContextCompat.getColor(this, R.color.chart_line2);
+        int color3 = ContextCompat.getColor(this, R.color.chart_line3);
+
         List<ICandle> candles = new ArrayList<>();
         List<IBarLineSet> mainBarLineSets = new ArrayList<>();
 
         BarLineSet maLine = new BarLineSet("MA", "");
-        maLine.addLine(0xFFDA8AE5, "MA5:");
-        maLine.addLine(0xFF39B0E8, "MA10:");
-        maLine.addLine(0xFFFFC76D, "MA30:");
+        maLine.addLine(color1, "MA5:");
+        maLine.addLine(color2, "MA10:");
+        maLine.addLine(color3, "MA30:");
 
         BarLineSet bollLine = new BarLineSet("BOLL", "");
-        bollLine.addLine(0xFFDA8AE5, "BOLL:");//中轨线
-        bollLine.addLine(0xFF39B0E8, "UB:");//上轨线
-        bollLine.addLine(0xFFFFC76D, "LB:");//下轨线
+        bollLine.addLine(color1, "BOLL:");//中轨线
+        bollLine.addLine(color2, "UB:");//上轨线
+        bollLine.addLine(color3, "LB:");//下轨线
 
         mainBarLineSets.add(maLine);
         mainBarLineSets.add(bollLine);
 
-        for (IBarLineSet barLineSet : mainBarLineSets) {
-            mainItemTabAdapter.addData(barLineSet.getName());
-        }
-
         List<IBarLineSet> child1BarLineSets = new ArrayList<>();
 
         BarLineSet volumeLine = new BarLineSet("VOL", "VOL:");
-        volumeLine.addLine(0xFFDA8AE5, "MA5:");
-        volumeLine.addLine(0xFF39B0E8, "MA10:");
+        volumeLine.addLine(color1, "MA5:");
+        volumeLine.addLine(color2, "MA10:");
         child1BarLineSets.add(volumeLine);
-
 
         List<IBarLineSet> child2BarLineSets = new ArrayList<>();
 
-        BarLineSet macdLine = new BarLineSet("MACD(12,26,9)", "MACD:");
+        BarLineSet macdLine = new BarLineSet("MACD(12,26,9)", true, "MACD:");
+        macdLine.addLine(color1, "DIF:");
+        macdLine.addLine(color2, "DEA:");
         child2BarLineSets.add(macdLine);
 
-
-        BarLineSet kdjLine = new BarLineSet("KDJ", "");
+        BarLineSet kdjLine = new BarLineSet("KDJ(14,1,3)", true, "");
+        kdjLine.addLine(color1, "K:");
+        kdjLine.addLine(color2, "D:");
+        kdjLine.addLine(color3, "J:");
         child2BarLineSets.add(kdjLine);
 
-
         BarLineSet rsiLine = new BarLineSet("RSI", "");
+        rsiLine.addLine(color1, "RSI(14):");
         child2BarLineSets.add(rsiLine);
 
-
         BarLineSet wrLine = new BarLineSet("WR", "");
+        wrLine.addLine(color1, "WR(14):");
         child2BarLineSets.add(wrLine);
 
-        for (IBarLineSet barLineSet : child2BarLineSets) {
-            subItemTabAdapter.addData(barLineSet.getName());
-        }
-
         try {
-            String json = AssetUtil.readAsset(context, "test.json");
+            String json = AssetUtil.readAsset(context, "little.json");
             JSONArray jsonArray = new JSONArray(json);
 
             Log.e("KLineChartActivity", "数据长：" + jsonArray.length());
@@ -240,6 +240,22 @@ public class KLineChartActivity extends AppCompatActivity {
 
             float volMa5 = 0;
             float volMa10 = 0;
+
+            float ema12 = 0;
+            float ema26 = 0;
+            float dif = 0;
+            float dea = 0;
+            float macd = 0;
+
+            float K = 0;
+            float D = 0;
+            float J = 0;
+
+            Float rsi = null;
+            float rsiABSEma = 0;
+            float rsiMaxEma = 0;
+
+            Float r;
             Candle entity;
             for (int i = 0; i < jsonArray.length(); i++) {
                 entity = new Candle();
@@ -251,13 +267,16 @@ public class KLineChartActivity extends AppCompatActivity {
                 entity.time = arr.getLong(4);
                 entity.volume = (float) arr.getDouble(5);
                 entity.total = entity.volume * entity.close;
-                entity.changeValue = entity.open - entity.close;
+                entity.changeValue = entity.close - entity.open;
                 //计算涨跌幅
                 String per = format.format((entity.close - entity.open) / entity.open);
                 entity.changePercent = per.startsWith("-") ? per : "+" + per;
                 candles.add(entity);
 
-                ma5 += entity.getClose();
+                float close = entity.getClose();
+
+                //计算ma
+                ma5 += close;
                 if (i == 4) {
                     maLine.getLine(0).add(ma5 / 5);
                 } else if (i >= 5) {
@@ -266,7 +285,7 @@ public class KLineChartActivity extends AppCompatActivity {
                 } else {
                     maLine.getLine(0).add(null);
                 }
-                ma10 += entity.getClose();
+                ma10 += close;
                 if (i == 9) {
                     maLine.getLine(1).add(ma10 / 10);
                 } else if (i >= 10) {
@@ -275,7 +294,7 @@ public class KLineChartActivity extends AppCompatActivity {
                 } else {
                     maLine.getLine(1).add(null);
                 }
-                ma30 += entity.getClose();
+                ma30 += close;
                 if (i == 29) {
                     maLine.getLine(2).add(ma30 / 30);
                 } else if (i >= 30) {
@@ -285,7 +304,8 @@ public class KLineChartActivity extends AppCompatActivity {
                     maLine.getLine(2).add(null);
                 }
 
-                ma20 += entity.getClose();
+                //计算boll
+                ma20 += close;
                 if (i < 19) {
                     bollLine.getLine(0).add(null);
                     bollLine.getLine(1).add(null);
@@ -308,6 +328,8 @@ public class KLineChartActivity extends AppCompatActivity {
                     bollLine.getLine(2).add(ma20 / 20 - 2f * md);
                 }
 
+                //计算成交量
+                volumeLine.addBarData(entity.getVolume());
                 volMa5 += entity.getVolume();
                 if (i < 4) {
                     volumeLine.getLine(0).add(null);
@@ -325,6 +347,99 @@ public class KLineChartActivity extends AppCompatActivity {
                         volMa10 -= candles.get(i - 10).getVolume();
                     volumeLine.getLine(1).add(volMa10 / 10);
                 }
+
+                //计算macd
+                if (i == 0) {
+                    ema12 = close;
+                    ema26 = close;
+                } else {
+                    // EMA（12） = 前一日EMA（12） X 11/13 + 今日收盘价 X 2/13
+                    ema12 = ema12 * 11f / 13f + close * 2f / 13f;
+                    // EMA（26） = 前一日EMA（26） X 25/27 + 今日收盘价 X 2/27
+                    ema26 = ema26 * 25f / 27f + close * 2f / 27f;
+                }
+                // DIF = EMA（12） - EMA（26） 。
+                // 今日DEA = （前一日DEA X 8/10 + 今日DIF X 2/10）
+                // 用（DIF-DEA）*2即为MACD柱状图。
+                dif = ema12 - ema26;
+                dea = dea * 8f / 10f + dif * 2f / 10f;
+                macd = (dif - dea) * 2f;
+                macdLine.addBarData(macd);
+                macdLine.getLine(0).add(dif);
+                macdLine.getLine(1).add(dea);
+
+                //计算kdj
+                int startIndex = i - 13;
+                if (startIndex < 0) {
+                    startIndex = 0;
+                }
+                float max14 = Float.MIN_VALUE;
+                float min14 = Float.MAX_VALUE;
+                for (int index = startIndex; index <= i; index++) {
+                    max14 = Math.max(max14, entity.getHigh());
+                    min14 = Math.min(min14, entity.getLow());
+                }
+                Float rsv = 100f * (close - min14) / (max14 - min14);
+                if (rsv.isNaN()) {
+                    rsv = 0f;
+                }
+                if (i == 0) {
+                    K = 50;
+                    D = 50;
+                } else {
+                    K = (rsv + 2f * K) / 3f;
+                    D = (K + 2f * D) / 3f;
+                }
+                if (i < 13) {
+                    K = 0;
+                    D = 0;
+                    J = 0;
+                } else if (i == 13 || i == 14) {
+                    D = 0;
+                    J = 0;
+                } else {
+                    J = 3f * K - 2 * D;
+                }
+                kdjLine.getLine(0).add(K);
+                kdjLine.getLine(1).add(D);
+                kdjLine.getLine(2).add(J);
+
+                //计算rsi
+                if (i > 0) {
+                    float Rmax = Math.max(0, close - candles.get(i - 1).getClose());
+                    float RAbs = Math.abs(close - candles.get(i - 1).getClose());
+
+                    rsiMaxEma = (Rmax + (14f - 1) * rsiMaxEma) / 14f;
+                    rsiABSEma = (RAbs + (14f - 1) * rsiABSEma) / 14f;
+                    rsi = (rsiMaxEma / rsiABSEma) * 100;
+                }
+                if (i < 13) {
+                    rsi = 0f;
+                }
+                if (rsi.isNaN())
+                    rsi = 0f;
+
+                rsiLine.getLine(0).add(rsi);
+
+
+                //计算wr
+                startIndex = i - 14;
+                if (startIndex < 0) {
+                    startIndex = 0;
+                }
+                max14 = Float.MIN_VALUE;
+                min14 = Float.MAX_VALUE;
+                for (int index = startIndex; index <= i; index++) {
+                    max14 = Math.max(max14, entity.getHigh());
+                    min14 = Math.min(min14, entity.getLow());
+                }
+                if (i < 13) {
+                    wrLine.getLine(0).add(-10f);
+                } else {
+                    r = -100 * (max14 - close) / (max14 - min14);
+
+                    wrLine.getLine(0).add(r.isNaN() ? 0f : r);
+                }
             }
         } catch (Exception ignored) {
         }
@@ -332,12 +447,7 @@ public class KLineChartActivity extends AppCompatActivity {
         mAdapter.setData(candles);
         mAdapter.setMainLineSets(mainBarLineSets);
         mAdapter.setChild1LineSets(child1BarLineSets);
-        mAdapter.setChild1LineSets(child2BarLineSets);
-
-        ICandle candle = mAdapter.getCandle(mAdapter.getCount() - 1);
-        original = candle.getClose();
-
-        //mHandler.postDelayed(runnable, 1000);
+        mAdapter.setChild2LineSets(child2BarLineSets);
     }
 
     private float original;
