@@ -37,6 +37,7 @@ dependencies {
 
     implementation 'com.github.CymChad:BaseRecyclerViewAdapterHelper:2.9.44'
 
+    implementation 'com.zhouyou:rxeasyhttp:2.1.5'
 
     api project(path: ':klinechartlib')
 }

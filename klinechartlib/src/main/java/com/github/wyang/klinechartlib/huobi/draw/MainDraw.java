@@ -9,8 +9,8 @@ import android.graphics.Shader;
 import android.support.annotation.IntDef;
 import android.support.annotation.NonNull;
 
-import com.github.wyang.klinechartlib.base.IBarLineSet;
-import com.github.wyang.klinechartlib.base.ICandle;
+import com.github.wyang.klinechartlib.huobi.interfaces.IBarLineSet;
+import com.github.wyang.klinechartlib.huobi.data.ICandle;
 import com.github.wyang.klinechartlib.huobi.KLineChartAdapter;
 import com.github.wyang.klinechartlib.huobi.KLineChartView;
 import com.github.wyang.klinechartlib.huobi.helper.LinePathHelper;
@@ -24,7 +24,7 @@ import java.util.List;
  * Created by weiyang on 2019-11-04.
  * 最下面为收盘线or蜡烛图，支持均线，boll线...
  */
-public class MainRect extends ChartRect {
+public class MainDraw extends ChartDraw {
 
     @IntDef({Mode.LINE, Mode.CANDLE})
     @Retention(RetentionPolicy.SOURCE)
@@ -51,7 +51,7 @@ public class MainRect extends ChartRect {
     private int mMaxValueIndex;
     private int mMinValueIndex;
 
-    public MainRect(KLineChartView chart, LinePathHelper helper) {
+    public MainDraw(KLineChartView chart, LinePathHelper helper) {
         super(chart, helper);
     }
 
@@ -157,7 +157,7 @@ public class MainRect extends ChartRect {
                     text = barLineSet.getLabel(i) + mChart.getPriceFormatter().format(rst);
                     mChart.drawText(canvas, text, p, barLineSet.getLineColor(i));
 
-                    p.x += mChart.getTextPaint().measureText(text+"    ");
+                    p.x += mChart.getTextPaint().measureText(text + "    ");
                     p.y = 0;
                 }
                 PointFPool.recycle(p);
@@ -204,7 +204,8 @@ public class MainRect extends ChartRect {
     }
 
     @Override
-    public void updateMaxMinValue(ICandle data, int index) {
+    public void calcMinMax(int index) {
+        ICandle data = mChart.getAdapter().getCandle(index);
         if (isLine()) {
             maxValue = Math.max(data.getClose(), maxValue);
             minValue = Math.min(data.getClose(), minValue);

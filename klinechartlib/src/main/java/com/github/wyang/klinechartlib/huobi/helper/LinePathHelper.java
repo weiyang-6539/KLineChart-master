@@ -4,8 +4,8 @@ import android.graphics.Path;
 import android.graphics.PointF;
 import android.support.annotation.NonNull;
 
-import com.github.wyang.klinechartlib.base.IBarLineSet;
-import com.github.wyang.klinechartlib.huobi.draw.ICharRect;
+import com.github.wyang.klinechartlib.huobi.interfaces.IBarLineSet;
+import com.github.wyang.klinechartlib.huobi.draw.IChartDraw;
 import com.github.wyang.klinechartlib.utils.ObjectPool;
 import com.github.wyang.klinechartlib.utils.PointFPool;
 
@@ -44,17 +44,17 @@ public class LinePathHelper {
     }
 
 
-    private ICharRect iCharRect;
-    private IBarLineSet iBarLineSet;
+    private IChartDraw iChartDraw;
+    private IBarLineSet iLineSet;
     private List<Path> paths = new ArrayList<>();
     private List<PointF> control1Points = new ArrayList<>();
     private List<PointF> control2Points = new ArrayList<>();
 
-    public void save(@NonNull ICharRect iCharRect, IBarLineSet iBarLineSet) {
-        this.iCharRect = iCharRect;
-        this.iBarLineSet = iBarLineSet;
-        if (iBarLineSet != null) {
-            for (int i = 0; i < iBarLineSet.getLineSize(); i++) {
+    public void save(@NonNull IChartDraw iChartDraw, IBarLineSet iLineSet) {
+        this.iChartDraw = iChartDraw;
+        this.iLineSet = iLineSet;
+        if (iLineSet != null) {
+            for (int i = 0; i < iLineSet.getLineSize(); i++) {
                 Path path = getPath();
                 path.reset();
                 paths.add(path);
@@ -79,10 +79,10 @@ public class LinePathHelper {
     protected float SMOOTHNESS = 0.2f;
 
     public void move(int index) {
-        if (iBarLineSet == null)
+        if (iLineSet == null)
             return;
-        for (int i = 0; i < iBarLineSet.getLineSize(); i++) {
-            List<Float> points = iBarLineSet.getLine(i);
+        for (int i = 0; i < iLineSet.getLineSize(); i++) {
+            List<Float> points = iLineSet.getLine(i);
 
             Float rst = points.get(index);
             Path path = paths.get(i);
@@ -93,25 +93,26 @@ public class LinePathHelper {
             PointF f1 = control1Points.get(i);
             PointF f2 = control2Points.get(i);
 
-            float x = iCharRect.getAxisX(index);
-            float y = iCharRect.getAxisY(rst);
+            float x = iChartDraw.getAxisX(index);
+            float y = iChartDraw.getAxisY(rst);
 
             if (path.isEmpty()) {
                 path.moveTo(x, y);
                 //更新控制点1
                 f1.set(x, y);
-            } else if (index == iBarLineSet.getLine(0).size() - 1) {
-                float lastX = iCharRect.getAxisX(index - 1);
+            } else if (index == iLineSet.getLine(0).size() - 1) {
+                float lastX = iChartDraw.getAxisX(index - 1);
                 f2.x = x - (x - lastX) * SMOOTHNESS;
                 f2.y = y;
 
                 path.cubicTo(f1.x, f1.y, f2.x, f2.y, x, y);
             } else {
-                float lastX = iCharRect.getAxisX(index - 1);
-                float lastY = iCharRect.getAxisY(iBarLineSet.getLine(i).get(index - 1));
+                float lastX = iChartDraw.getAxisX(index - 1);
+                float lastY = iChartDraw.getAxisY(iLineSet.getLine(i).get(index - 1));
 
-                float nextX = iCharRect.getAxisX(index + 1);
-                float nextY = iCharRect.getAxisY(iBarLineSet.getLine(i).get(index + 1));
+                float nextX = iChartDraw.getAxisX(index + 1);
+                iLineSet.getLine(i);
+                float nextY = iChartDraw.getAxisY(iLineSet.getLine(i).get(index + 1));
 
                 float k = (nextY - lastY) / (nextX - lastX);
                 float b = y - k * x;

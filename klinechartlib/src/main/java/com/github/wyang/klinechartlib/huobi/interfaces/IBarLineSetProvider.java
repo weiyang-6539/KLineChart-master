@@ -1,7 +1,5 @@
 package com.github.wyang.klinechartlib.huobi.interfaces;
 
-import com.github.wyang.klinechartlib.base.IBarLineSet;
-
 /**
  * Created by fxb on 2019-12-03.
  */

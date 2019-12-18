@@ -157,7 +157,7 @@
             android:id="@+id/rg_main"
             android:layout_width="match_parent"
             android:layout_height="0dp"
-            android:layout_weight="2">
+            android:layout_weight="3">
 
             <RadioButton
                 android:id="@+id/rb_ma"
@@ -167,6 +167,16 @@
                 android:button="@null"
                 android:gravity="center"
                 android:text="MA"
+                android:textColor="@drawable/selector_tab_text" />
+
+            <RadioButton
+                android:id="@+id/rb_ema"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:button="@null"
+                android:gravity="center"
+                android:text="EMA"
                 android:textColor="@drawable/selector_tab_text" />
 
             <RadioButton

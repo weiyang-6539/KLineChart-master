@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <declare-styleable name="KLineChartView">
-        <attr name="kc_item_width" format="dimension" />
+        <attr name="kc_point_width" format="dimension" />
         <attr name="kc_candle_width" format="dimension" />
         <attr name="kc_candle_line_width" format="dimension" />
         <attr name="kc_grid_line_width" format="dimension" />

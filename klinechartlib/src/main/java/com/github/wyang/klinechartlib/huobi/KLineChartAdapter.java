@@ -1,8 +1,8 @@
 package com.github.wyang.klinechartlib.huobi;
 
 import com.github.wyang.klinechartlib.base.ChartAdapter;
-import com.github.wyang.klinechartlib.base.ICandle;
-import com.github.wyang.klinechartlib.base.IBarLineSet;
+import com.github.wyang.klinechartlib.huobi.interfaces.IBarLineSet;
+import com.github.wyang.klinechartlib.huobi.data.ICandle;
 import com.github.wyang.klinechartlib.huobi.interfaces.IBarLineSetProvider;
 
 import java.util.ArrayList;
@@ -21,7 +21,8 @@ public class KLineChartAdapter extends ChartAdapter implements IBarLineSetProvid
     private int indexChild1;
     private int indexChild2;
 
-    public KLineChartAdapter() {
+    public KLineChartAdapter(KLineChartView chart) {
+        chart.setAdapter(this);
     }
 
     @Override
@@ -29,12 +30,10 @@ public class KLineChartAdapter extends ChartAdapter implements IBarLineSetProvid
         return mCandleData.size();
     }
 
-    @Override
     public float getLatestPrice() {
         return getCandle(getCount() - 1).getClose();
     }
 
-    @Override
     public ICandle getCandle(int position) {
         return mCandleData.get(position);
     }
@@ -45,14 +44,20 @@ public class KLineChartAdapter extends ChartAdapter implements IBarLineSetProvid
 
     public void setMainLineSets(List<IBarLineSet> barLineSets) {
         this.mMainLineSets = barLineSets;
+
+        notifyDataSetChanged();
     }
 
     public void setChild1LineSets(List<IBarLineSet> barLineSets) {
         this.mChild1LineSets = barLineSets;
+
+        notifyDataSetChanged();
     }
 
     public void setChild2LineSets(List<IBarLineSet> barLineSets) {
         this.mChild2LineSets = barLineSets;
+
+        notifyDataSetChanged();
     }
 
     public void changeMain(int index) {
@@ -87,4 +92,5 @@ public class KLineChartAdapter extends ChartAdapter implements IBarLineSetProvid
     public IBarLineSet getChild2LineSet() {
         return indexChild2 != -1 ? mChild2LineSets.get(indexChild2) : null;
     }
+
 }

@@ -6,8 +6,8 @@ import android.graphics.PointF;
 import android.support.annotation.NonNull;
 
 import com.github.wyang.klinechartlib.R;
-import com.github.wyang.klinechartlib.base.IBarLineSet;
-import com.github.wyang.klinechartlib.base.ICandle;
+import com.github.wyang.klinechartlib.huobi.interfaces.IBarLineSet;
+import com.github.wyang.klinechartlib.huobi.data.ICandle;
 import com.github.wyang.klinechartlib.huobi.KLineChartAdapter;
 import com.github.wyang.klinechartlib.huobi.KLineChartView;
 import com.github.wyang.klinechartlib.huobi.helper.LinePathHelper;
@@ -18,16 +18,16 @@ import java.util.List;
 /**
  * Created by fxb on 2019-11-04.
  */
-public class ChildRect1 extends ChartRect {
+public class ChildDraw2 extends ChartDraw {
 
-    public ChildRect1(KLineChartView chart, LinePathHelper helper) {
+    public ChildDraw2(KLineChartView chart, LinePathHelper helper) {
         super(chart, helper);
     }
 
     @Override
     public void draw(@NonNull Canvas canvas) {
         KLineChartAdapter mAdapter = mChart.getAdapter();
-        IBarLineSet barLineSet = mAdapter.getChild1LineSet();
+        IBarLineSet barLineSet = mAdapter.getChild2LineSet();
         if (barLineSet == null)
             return;
         mHelper.save(this, barLineSet);
@@ -35,16 +35,17 @@ public class ChildRect1 extends ChartRect {
         int startIndex = mChart.getStartIndex();
         int endIndex = mChart.getEndIndex();
 
-        List<Float> barData = barLineSet.getBarData();
+        List<Float> barData = barLineSet.getData();
         for (int i = startIndex; i <= endIndex; i++) {
             mHelper.move(i);
+
             if (barData.isEmpty())
                 continue;
             ICandle candle = mAdapter.getCandle(i);
             Float rst = barData.get(i);
-            if (rst != null && rst != 0) {
+            if (rst != null) {
                 float x = getAxisX(i);
-                mChart.drawCandle(canvas, x, getAxisY(rst), getAxisY(0), candle.getChangeValue() >= 0);
+                mChart.drawFillCandle(canvas, x, getAxisY(rst), getAxisY(0), candle.isRise());
             }
         }
 
@@ -74,6 +75,7 @@ public class ChildRect1 extends ChartRect {
             p.x += mChart.getTextPaint().measureText(text) + 5;
             p.y = getTop();
         }
+
         for (int i = 0; i < barLineSet.getLineSize(); i++) {
             Float rst = barLineSet.getLine(i).get(selectedIndex == -1 ? mAdapter.getCount() - 1 : selectedIndex);
             if (rst == null)
@@ -89,16 +91,16 @@ public class ChildRect1 extends ChartRect {
     }
 
     @Override
-    public void updateMaxMinValue(ICandle data, int index) {
-        IBarLineSet barLineSet = mChart.getAdapter().getChild1LineSet();
+    public void calcMinMax(int index) {
+        IBarLineSet barLineSet = mChart.getAdapter().getChild2LineSet();
         if (barLineSet != null) {
-            List<Float> barData = barLineSet.getBarData();
+            List<Float> barData = barLineSet.getData();
             if (!barData.isEmpty()) {
                 maxValue = Math.max(barData.get(index), maxValue);
-                minValue = Math.min(barData.get(index), 0);
+                minValue = Math.min(barData.get(index), minValue);
             }
             maxValue = Math.max(barLineSet.getMax(index), maxValue);
-            minValue = Math.min(barLineSet.getMin(index), 0);
+            minValue = Math.min(barLineSet.getMin(index), minValue);
         } else {
             maxValue = Float.MIN_VALUE;
             minValue = Float.MAX_VALUE;

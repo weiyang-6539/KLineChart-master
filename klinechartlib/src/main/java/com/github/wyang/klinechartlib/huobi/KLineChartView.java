@@ -3,8 +3,6 @@ package com.github.wyang.klinechartlib.huobi;
 import android.animation.ValueAnimator;
 import android.content.Context;
 import android.content.res.TypedArray;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.DashPathEffect;
 import android.graphics.LinearGradient;
@@ -15,21 +13,21 @@ import android.graphics.RadialGradient;
 import android.graphics.RectF;
 import android.graphics.Shader;
 import android.support.annotation.ColorInt;
-import android.support.annotation.DrawableRes;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
 
 import com.github.wyang.klinechartlib.R;
 import com.github.wyang.klinechartlib.base.BaseChartView;
+import com.github.wyang.klinechartlib.huobi.data.ICandle;
 import com.github.wyang.klinechartlib.base.IDateFormatter;
 import com.github.wyang.klinechartlib.base.IValueFormatter;
-import com.github.wyang.klinechartlib.base.ICandle;
 import com.github.wyang.klinechartlib.formatter.DateFormatter;
+import com.github.wyang.klinechartlib.formatter.PercentValueFormatter;
 import com.github.wyang.klinechartlib.formatter.PriceFormatter;
 import com.github.wyang.klinechartlib.formatter.VolumeFormatter;
-import com.github.wyang.klinechartlib.huobi.draw.ChildRect1;
-import com.github.wyang.klinechartlib.huobi.draw.ChildRect2;
-import com.github.wyang.klinechartlib.huobi.draw.MainRect;
+import com.github.wyang.klinechartlib.huobi.draw.ChildDraw1;
+import com.github.wyang.klinechartlib.huobi.draw.ChildDraw2;
+import com.github.wyang.klinechartlib.huobi.draw.MainDraw;
 import com.github.wyang.klinechartlib.huobi.helper.LinePathHelper;
 import com.github.wyang.klinechartlib.huobi.helper.TextDrawHelper;
 import com.github.wyang.klinechartlib.utils.PointFPool;
@@ -88,12 +86,10 @@ public class KLineChartView extends BaseChartView<KLineChartAdapter> {
 
     private RectF tempRect = new RectF();
 
-    private float mCandleWidth;//蜡烛的宽
+    private float mCandleWidth;//蜡烛的宽=mPointWidth - 1dp
     private float mCandleLineWidth;//蜡烛影线的宽
 
     private boolean isDrawGridStartEnd;
-    private Bitmap icon;
-    private float iconMargin;
 
     @ColorInt
     private int axisTextColor;
@@ -110,16 +106,17 @@ public class KLineChartView extends BaseChartView<KLineChartAdapter> {
     private TextDrawHelper mTextDrawHelper;
 
     private LinePathHelper mLinePathHelper;
-    private MainRect mMainRect;
-    private ChildRect1 mChildRect1;
-    private ChildRect2 mChildRect2;
+    private MainDraw mMainRect;
+    private ChildDraw1 mChildRect1;
+    private ChildDraw2 mChildRect2;
 
     private boolean isBottomAxisX = true;//x轴绘制于View的底部，反之则在主图底部
     private boolean isShowChild2 = true;//是否显示副图
 
     private IValueFormatter mPriceFormatter;
-    private IDateFormatter mDateFormatter;
     private IValueFormatter mVolumeFormatter;
+    private IValueFormatter mPercentFormatter;
+    private IDateFormatter mDateFormatter;
 
     private ValueAnimator mBeatAnimator;
 
@@ -138,16 +135,15 @@ public class KLineChartView extends BaseChartView<KLineChartAdapter> {
 
         initAttrs(context, attrs);
 
-        iconMargin = dp2px(5);
         axisYTextPadding = (int) dp2px(5);
 
         mTextDrawHelper = new TextDrawHelper();
 
         mLinePathHelper = new LinePathHelper();
 
-        mMainRect = new MainRect(this, mLinePathHelper);
-        mChildRect1 = new ChildRect1(this, mLinePathHelper);
-        mChildRect2 = new ChildRect2(this, mLinePathHelper);
+        mMainRect = new MainDraw(this, mLinePathHelper);
+        mChildRect1 = new ChildDraw1(this, mLinePathHelper);
+        mChildRect2 = new ChildDraw2(this, mLinePathHelper);
 
         mMainRect.setTopSpacing(getTopSpacing() * 2);
         mChildRect1.setTopSpacing(getTopSpacing());
@@ -184,7 +180,7 @@ public class KLineChartView extends BaseChartView<KLineChartAdapter> {
         if (attrs != null) {
             TypedArray typedArray = context.obtainStyledAttributes(attrs, R.styleable.KLineChartView);
 
-            setPointWidth(typedArray.getDimension(R.styleable.KLineChartView_kc_item_width, getDimension(R.dimen.chart_point_width)));
+            setPointWidth(typedArray.getDimension(R.styleable.KLineChartView_kc_point_width, getDimension(R.dimen.chart_point_width)));
 
             setCandleWidth(typedArray.getDimension(R.styleable.KLineChartView_kc_candle_width, getDimension(R.dimen.chart_candle_width)));
             setCandleLineWidth(typedArray.getDimension(R.styleable.KLineChartView_kc_candle_line_width, getDimension(R.dimen.chart_candle_line_width)));
@@ -200,8 +196,6 @@ public class KLineChartView extends BaseChartView<KLineChartAdapter> {
             setHighlightColor(typedArray.getColor(R.styleable.KLineChartView_kc_highlight_color, getColor(R.color.chart_highlight)));
             setHighlightSize(typedArray.getDimension(R.styleable.KLineChartView_kc_highlight_size, getDimension(R.dimen.chart_highlight_size)));
 
-            icon = BitmapFactory.decodeResource(getResources(), typedArray.getResourceId(R.styleable.KLineChartView_kc_icon, 0));
-
             setColorRise(getColor(R.color.chart_red));
             setColorFall(getColor(R.color.chart_green));
 
@@ -214,7 +208,7 @@ public class KLineChartView extends BaseChartView<KLineChartAdapter> {
         return mMainRect.isLine();
     }
 
-    public void initPartRect() {
+    public void initChartPart() {
         float mGridHeight = mHeight - mMainRect.getTopSpacing() - getAxisXHeight();
 
         float avg = mGridHeight * 1f / mGridRows;
@@ -237,9 +231,20 @@ public class KLineChartView extends BaseChartView<KLineChartAdapter> {
     }
 
     @Override
+    protected float getMinScaleX() {
+        return mCandleLineWidth * 2 / mPointWidth;
+    }
+
+    @Override
+    protected float getMaxScaleX() {
+        return super.getMaxScaleX();
+    }
+
+    @Override
     protected void onScaleChanged(float oldScale) {
         super.onScaleChanged(oldScale);
 
+        mCandleWidth = mPointWidth * mScaleX - mCandleLineWidth;
         mSelectedYLinePaint.setStrokeWidth(mPointWidth * mScaleX);
     }
 
@@ -249,7 +254,7 @@ public class KLineChartView extends BaseChartView<KLineChartAdapter> {
         log("----------------onSizeChanged()----------------");
         setOverScrollRange(mWidth * 1f / mGridColumns);
 
-        initPartRect();
+        initChartPart();
 
         //scrollTo(0, 0);
         getAdapter().notifyDataSetChanged();
@@ -257,13 +262,12 @@ public class KLineChartView extends BaseChartView<KLineChartAdapter> {
 
     @Override
     protected void onDraw(Canvas canvas) {
-        calculateValue();
-
         drawGrid(canvas);
 
-        if (icon != null) {
-            canvas.drawBitmap(icon, iconMargin, mMainRect.getMinAxisY() - icon.getHeight() - iconMargin, null);
-        }
+        if (mAdapter.getCount() == 0)
+            return;
+        calculateValue();
+
 
         mMainRect.draw(canvas);
         mChildRect1.draw(canvas);
@@ -289,22 +293,19 @@ public class KLineChartView extends BaseChartView<KLineChartAdapter> {
             mSelectedIndex = -1;
         }
 
-        mStartIndex = indexOfTranslateX(x2TranslateX(0));
-        mEndIndex = indexOfTranslateX(x2TranslateX(mWidth));
+        mStartIndex = indexOfX(drawX2X(0));
+        mEndIndex = indexOfX(drawX2X(mWidth));
 
         mMainRect.resetMaxMinValue();
         mChildRect1.resetMaxMinValue();
         mChildRect2.resetMaxMinValue();
 
         for (int i = mStartIndex; i <= mEndIndex; i++) {
-            ICandle point = getAdapter().getCandle(i);
-            if (mMainRect != null) {
-                mMainRect.updateMaxMinValue(point, i);
+            mMainRect.calcMinMax(i);
 
-                mChildRect1.updateMaxMinValue(point, i);
+            mChildRect1.calcMinMax(i);
 
-                mChildRect2.updateMaxMinValue(point, i);
-            }
+            mChildRect2.calcMinMax(i);
         }
 
         if (mMainRect != null)
@@ -337,15 +338,10 @@ public class KLineChartView extends BaseChartView<KLineChartAdapter> {
     }
 
     /**
-     * 绘制主图蜡烛图上下影线
+     * 绘制主图蜡烛
      */
-    public void drawCandleLine(Canvas canvas, float x, float startY, float stopY) {
-        mCandlePaint.setStyle(Paint.Style.STROKE);
-        canvas.drawLine(x, startY, x, stopY, mCandlePaint);
-    }
-
     public void drawCandle(Canvas canvas, float x, float top, float bottom, boolean isRise) {
-        tempRect.set(x - mCandleWidth * mScaleX * .5f, top, x + mCandleWidth * mScaleX * .5f, bottom);
+        tempRect.set(x - mCandleWidth * .5f, top, x + mCandleWidth * .5f, bottom);
         if (isRise) {
             mCandlePaint.setStyle(isRiseFill() ? Paint.Style.FILL : Paint.Style.STROKE);
         } else {
@@ -356,10 +352,18 @@ public class KLineChartView extends BaseChartView<KLineChartAdapter> {
     }
 
     /**
+     * 绘制主图蜡烛图上下影线
+     */
+    public void drawCandleLine(Canvas canvas, float x, float startY, float stopY) {
+        mCandlePaint.setStyle(Paint.Style.STROKE);
+        canvas.drawLine(x, startY, x, stopY, mCandlePaint);
+    }
+
+    /**
      * macd蜡烛图始终为实心柱子
      */
     public void drawFillCandle(Canvas canvas, float x, float top, float bottom, boolean isRise) {
-        tempRect.set(x - mCandleWidth * mScaleX * .5f, top, x + mCandleWidth * mScaleX * .5f, bottom);
+        tempRect.set(x - mCandleWidth * .5f, top, x + mCandleWidth * .5f, bottom);
         mCandlePaint.setStyle(Paint.Style.FILL);
         mCandlePaint.setColor(isRise ? colorRise : colorFall);
         canvas.drawRect(tempRect, mCandlePaint);
@@ -396,11 +400,11 @@ public class KLineChartView extends BaseChartView<KLineChartAdapter> {
         //画x轴文本
         float columnSpace = 1f * mWidth / mGridColumns;
         for (int i = 0; i <= mGridColumns; i++) {
-            float translateX = x2TranslateX(columnSpace * i);
+            float translateX = drawX2X(columnSpace * i);
             //最右侧设置可滑出距离并且最后一个数据不在最右侧时，不绘制时间
             if (translateX > mDataLength)
                 continue;
-            int index = indexOfTranslateX(translateX);
+            int index = indexOfX(translateX);
             String text = getDateFormatter().format(mAdapter.getCandle(index).getTime());
 
             p.x = columnSpace * i;
@@ -599,14 +603,17 @@ public class KLineChartView extends BaseChartView<KLineChartAdapter> {
                 labels.add(getString(R.string.chart_change_percent));
                 labels.add(getString(R.string.chart_amount));
 
+                float change = candle.getClose() - candle.getOpen();
+                float percent = change / candle.getClose();
+
                 List<String> values = new ArrayList<>();
                 values.add(getDateFormatter().format(candle.getTime()));
                 values.add(getPriceFormatter().format(candle.getOpen()));
                 values.add(getPriceFormatter().format(candle.getHigh()));
                 values.add(getPriceFormatter().format(candle.getLow()));
                 values.add(getPriceFormatter().format(candle.getClose()));
-                values.add(getPriceFormatter().format(candle.getChangeValue()));
-                values.add(candle.getChangePercent());
+                values.add(getPriceFormatter().format(change));
+                values.add(getPercentFormatter().format(percent));
                 values.add(getVolumeFormatter().format(candle.getVolume()));
 
                 for (int i = 0; i < labels.size(); i++) {
@@ -766,7 +773,7 @@ public class KLineChartView extends BaseChartView<KLineChartAdapter> {
     public void setShowChild2(boolean isShowChild2) {
         this.isShowChild2 = isShowChild2;
 
-        initPartRect();
+        initChartPart();
     }
 
     /**
@@ -776,7 +783,7 @@ public class KLineChartView extends BaseChartView<KLineChartAdapter> {
         return mTextDrawHelper.getTextHeight(mHighLightPaint);
     }
 
-    public void setMode(@MainRect.Mode int mode) {
+    public void setMode(@MainDraw.Mode int mode) {
         mMainRect.setMode(mode);
 
         float oldScaleX = mScaleX;
@@ -799,16 +806,6 @@ public class KLineChartView extends BaseChartView<KLineChartAdapter> {
         this.mPriceFormatter = mPriceFormatter;
     }
 
-    public IDateFormatter getDateFormatter() {
-        if (mDateFormatter == null)
-            mDateFormatter = new DateFormatter("MM-dd HH:mm");
-        return mDateFormatter;
-    }
-
-    public void setDateFormatter(IDateFormatter mDateFormatter) {
-        this.mDateFormatter = mDateFormatter;
-    }
-
     public IValueFormatter getVolumeFormatter() {
         if (mVolumeFormatter == null)
             mVolumeFormatter = new VolumeFormatter();
@@ -818,5 +815,25 @@ public class KLineChartView extends BaseChartView<KLineChartAdapter> {
 
     public void setVolumeFormatter(IValueFormatter mVolumeFormatter) {
         this.mVolumeFormatter = mVolumeFormatter;
+    }
+
+    public IValueFormatter getPercentFormatter() {
+        if (mPercentFormatter == null)
+            mPercentFormatter = new PercentValueFormatter();
+        return mPercentFormatter;
+    }
+
+    public void setPercentFormatter(IValueFormatter mPercentFormatter) {
+        this.mPercentFormatter = mPercentFormatter;
+    }
+
+    public IDateFormatter getDateFormatter() {
+        if (mDateFormatter == null)
+            mDateFormatter = new DateFormatter("MM-dd HH:mm");
+        return mDateFormatter;
+    }
+
+    public void setDateFormatter(IDateFormatter mDateFormatter) {
+        this.mDateFormatter = mDateFormatter;
     }
 }

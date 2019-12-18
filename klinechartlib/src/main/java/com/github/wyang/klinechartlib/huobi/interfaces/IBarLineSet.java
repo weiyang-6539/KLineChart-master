@@ -1,4 +1,4 @@
-package com.github.wyang.klinechartlib.base;
+package com.github.wyang.klinechartlib.huobi.interfaces;
 
 import java.util.List;
 
@@ -13,9 +13,9 @@ public interface IBarLineSet {
 
     String getBarLabel();
 
-    void addBarData(Float data);
+    void addData(Float data);
 
-    List<Float> getBarData();
+    List<Float> getData();
 
     void addLine(int color, String label);
 

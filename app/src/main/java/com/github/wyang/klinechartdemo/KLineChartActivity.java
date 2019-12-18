@@ -22,17 +22,16 @@ import com.chad.library.adapter.base.BaseQuickAdapter;
 import com.chad.library.adapter.base.BaseViewHolder;
 import com.github.wyang.klinechartdemo.utils.AssetUtil;
 import com.github.wyang.klinechartdemo.widget.CommonPopupWindow;
-import com.github.wyang.klinechartlib.base.IBarLineSet;
-import com.github.wyang.klinechartlib.base.ICandle;
+import com.github.wyang.klinechartlib.huobi.interfaces.IBarLineSet;
+import com.github.wyang.klinechartlib.huobi.data.ICandle;
 import com.github.wyang.klinechartlib.huobi.KLineChartAdapter;
 import com.github.wyang.klinechartlib.huobi.KLineChartView;
 import com.github.wyang.klinechartlib.huobi.data.BarLineSet;
 import com.github.wyang.klinechartlib.huobi.data.Candle;
-import com.github.wyang.klinechartlib.huobi.draw.MainRect;
+import com.github.wyang.klinechartlib.huobi.draw.MainDraw;
 
 import org.json.JSONArray;
 
-import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -99,9 +98,9 @@ public class KLineChartActivity extends AppCompatActivity {
                     setTabMoreColor(R.color.theme0xff);
                 }
                 if (tab.getPosition() == 0) {
-                    mKLineChartView.setMode(MainRect.Mode.LINE);
+                    mKLineChartView.setMode(MainDraw.Mode.LINE);
                 } else {
-                    mKLineChartView.setMode(MainRect.Mode.CANDLE);
+                    mKLineChartView.setMode(MainDraw.Mode.CANDLE);
                 }
             }
 
@@ -125,8 +124,7 @@ public class KLineChartActivity extends AppCompatActivity {
 
         //mKLineChartView.setCandleFill(false);
 
-        mAdapter = new KLineChartAdapter();
-        mAdapter.bindToChartView(mKLineChartView);
+        mAdapter = new KLineChartAdapter(mKLineChartView);
 
         initKLineData(this);
     }
@@ -230,7 +228,6 @@ public class KLineChartActivity extends AppCompatActivity {
             JSONArray jsonArray = new JSONArray(json);
 
             Log.e("KLineChartActivity", "数据长：" + jsonArray.length());
-            DecimalFormat format = new DecimalFormat("0.00%");
 
             float ma5 = 0;
             float ma10 = 0;
@@ -267,10 +264,6 @@ public class KLineChartActivity extends AppCompatActivity {
                 entity.time = arr.getLong(4);
                 entity.volume = (float) arr.getDouble(5);
                 entity.total = entity.volume * entity.close;
-                entity.changeValue = entity.close - entity.open;
-                //计算涨跌幅
-                String per = format.format((entity.close - entity.open) / entity.open);
-                entity.changePercent = per.startsWith("-") ? per : "+" + per;
                 candles.add(entity);
 
                 float close = entity.getClose();
@@ -329,7 +322,7 @@ public class KLineChartActivity extends AppCompatActivity {
                 }
 
                 //计算成交量
-                volumeLine.addBarData(entity.getVolume());
+                volumeLine.addData(entity.getVolume());
                 volMa5 += entity.getVolume();
                 if (i < 4) {
                     volumeLine.getLine(0).add(null);
@@ -364,7 +357,7 @@ public class KLineChartActivity extends AppCompatActivity {
                 dif = ema12 - ema26;
                 dea = dea * 8f / 10f + dif * 2f / 10f;
                 macd = (dif - dea) * 2f;
-                macdLine.addBarData(macd);
+                macdLine.addData(macd);
                 macdLine.getLine(0).add(dif);
                 macdLine.getLine(1).add(dea);
 
@@ -420,7 +413,6 @@ public class KLineChartActivity extends AppCompatActivity {
                     rsi = 0f;
 
                 rsiLine.getLine(0).add(rsi);
-
 
                 //计算wr
                 startIndex = i - 14;

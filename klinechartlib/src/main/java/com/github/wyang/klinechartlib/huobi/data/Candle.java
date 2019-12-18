@@ -1,7 +1,5 @@
 package com.github.wyang.klinechartlib.huobi.data;
 
-import com.github.wyang.klinechartlib.base.ICandle;
-
 /**
  * Created by weiyang on 2019-11-11.
  */
@@ -13,9 +11,6 @@ public class Candle implements ICandle {
     public float volume;
     public float total;
     public long time;
-
-    public float changeValue;
-    public String changePercent;
 
     @Override
     public float getOpen() {
@@ -53,12 +48,7 @@ public class Candle implements ICandle {
     }
 
     @Override
-    public float getChangeValue() {
-        return changeValue;
-    }
-
-    @Override
-    public String getChangePercent() {
-        return changePercent;
+    public boolean isRise() {
+        return close - open >= 0;
     }
 }

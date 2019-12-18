@@ -1,4 +1,4 @@
-package com.github.wyang.klinechartlib.base;
+package com.github.wyang.klinechartlib.huobi.data;
 
 /**
  * Created by weiyang on 2019-11-11.
@@ -20,7 +20,5 @@ public interface ICandle {
 
     long getTime();//时间
 
-    float getChangeValue();//涨跌值
-
-    String getChangePercent();//涨跌幅
+    boolean isRise();
 }

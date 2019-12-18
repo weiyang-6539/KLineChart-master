@@ -3,7 +3,7 @@ package com.github.wyang.klinechartlib.huobi.data;
 import android.util.SparseArray;
 import android.util.SparseIntArray;
 
-import com.github.wyang.klinechartlib.base.IBarLineSet;
+import com.github.wyang.klinechartlib.huobi.interfaces.IBarLineSet;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -68,12 +68,12 @@ public class BarLineSet implements IBarLineSet {
     }
 
     @Override
-    public void addBarData(Float data) {
+    public void addData(Float data) {
         barData.add(data);
     }
 
     @Override
-    public List<Float> getBarData() {
+    public List<Float> getData() {
         return barData;
     }
 

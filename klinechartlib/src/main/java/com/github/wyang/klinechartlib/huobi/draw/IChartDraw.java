@@ -3,7 +3,7 @@ package com.github.wyang.klinechartlib.huobi.draw;
 /**
  * Created by fxb on 2019-11-12.
  */
-public interface ICharRect {
+public interface IChartDraw {
 
     /**
      * 实际最大值

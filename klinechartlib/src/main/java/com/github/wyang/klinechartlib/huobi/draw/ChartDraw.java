@@ -4,7 +4,6 @@ import android.graphics.Canvas;
 import android.graphics.RectF;
 import android.support.annotation.NonNull;
 
-import com.github.wyang.klinechartlib.base.ICandle;
 import com.github.wyang.klinechartlib.huobi.KLineChartView;
 import com.github.wyang.klinechartlib.huobi.helper.LinePathHelper;
 
@@ -16,7 +15,7 @@ import com.github.wyang.klinechartlib.huobi.helper.LinePathHelper;
  * 3，绘制坐标值（x轴日期，y轴价格值，指标值，成交量值..）
  * 4，绘制高亮值（最大最小值在前，长按高亮线，该点对应各值等）
  */
-public abstract class ChartRect implements ICharRect {
+public abstract class ChartDraw implements IChartDraw {
     /**
      * 表格一部分在View所占矩形区域
      */
@@ -40,14 +39,14 @@ public abstract class ChartRect implements ICharRect {
     protected KLineChartView mChart;
     protected LinePathHelper mHelper;
 
-    public ChartRect(KLineChartView chart, LinePathHelper helper) {
+    public ChartDraw(KLineChartView chart, LinePathHelper helper) {
         this.mChart = chart;
         this.mHelper = helper;
     }
 
     public abstract void draw(@NonNull Canvas canvas);
 
-    public abstract void updateMaxMinValue(ICandle t, int index);
+    public abstract void calcMinMax(int index);
 
     public void setBounds(float left, float top, float right, float bottom) {
         mBounds.set(left, top, right, bottom);

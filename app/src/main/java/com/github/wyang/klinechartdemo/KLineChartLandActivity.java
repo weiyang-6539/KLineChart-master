@@ -16,17 +16,16 @@ import android.widget.RadioGroup;
 import android.widget.TextView;
 
 import com.github.wyang.klinechartdemo.utils.AssetUtil;
-import com.github.wyang.klinechartlib.base.IBarLineSet;
-import com.github.wyang.klinechartlib.base.ICandle;
+import com.github.wyang.klinechartlib.huobi.interfaces.IBarLineSet;
+import com.github.wyang.klinechartlib.huobi.data.ICandle;
 import com.github.wyang.klinechartlib.huobi.KLineChartAdapter;
 import com.github.wyang.klinechartlib.huobi.KLineChartView;
 import com.github.wyang.klinechartlib.huobi.data.BarLineSet;
 import com.github.wyang.klinechartlib.huobi.data.Candle;
-import com.github.wyang.klinechartlib.huobi.draw.MainRect;
+import com.github.wyang.klinechartlib.huobi.draw.MainDraw;
 
 import org.json.JSONArray;
 
-import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -73,9 +72,9 @@ public class KLineChartLandActivity extends AppCompatActivity {
             @Override
             public void onTabSelected(TabLayout.Tab tab) {
                 if (tab.getPosition() == 0)
-                    mKLineChartView.setMode(MainRect.Mode.LINE);
+                    mKLineChartView.setMode(MainDraw.Mode.LINE);
                 else
-                    mKLineChartView.setMode(MainRect.Mode.CANDLE);
+                    mKLineChartView.setMode(MainDraw.Mode.CANDLE);
 
             }
 
@@ -94,8 +93,7 @@ public class KLineChartLandActivity extends AppCompatActivity {
         mKLineChartView.setBottomAxisX(false);
         mKLineChartView.setDrawGridStartEnd(true);
 
-        mAdapter = new KLineChartAdapter();
-        mAdapter.bindToChartView(mKLineChartView);
+        mAdapter = new KLineChartAdapter(mKLineChartView);
 
         initKLineData(this);
 
@@ -111,8 +109,11 @@ public class KLineChartLandActivity extends AppCompatActivity {
                 case R.id.rb_ma:
                     mAdapter.changeMain(0);
                     break;
-                case R.id.rb_boll:
+                case R.id.rb_ema:
                     mAdapter.changeMain(1);
+                    break;
+                case R.id.rb_boll:
+                    mAdapter.changeMain(2);
                     break;
                 default:
                     mAdapter.changeMain(-1);
@@ -163,12 +164,17 @@ public class KLineChartLandActivity extends AppCompatActivity {
         maLine.addLine(color2, "MA10:");
         maLine.addLine(color3, "MA30:");
 
+        BarLineSet emaLine = new BarLineSet("EMA", "");
+        emaLine.addLine(color1, "EMA(12):");
+        emaLine.addLine(color2, "EMA(26):");
+
         BarLineSet bollLine = new BarLineSet("BOLL", "");
         bollLine.addLine(color1, "BOLL:");//中轨线
         bollLine.addLine(color2, "UB:");//上轨线
         bollLine.addLine(color3, "LB:");//下轨线
 
         mainBarLineSets.add(maLine);
+        mainBarLineSets.add(emaLine);
         mainBarLineSets.add(bollLine);
 
         List<IBarLineSet> child1BarLineSets = new ArrayList<>();
@@ -204,11 +210,11 @@ public class KLineChartLandActivity extends AppCompatActivity {
             JSONArray jsonArray = new JSONArray(json);
 
             Log.e("KLineChartActivity", "数据长：" + jsonArray.length());
-            DecimalFormat format = new DecimalFormat("0.00%");
 
             float ma5 = 0;
             float ma10 = 0;
             float ma30 = 0;
+
 
             float ma20 = 0;
 
@@ -241,14 +247,11 @@ public class KLineChartLandActivity extends AppCompatActivity {
                 entity.time = arr.getLong(4);
                 entity.volume = (float) arr.getDouble(5);
                 entity.total = entity.volume * entity.close;
-                entity.changeValue = entity.close - entity.open;
-                //计算涨跌幅
-                String per = format.format((entity.close - entity.open) / entity.open);
-                entity.changePercent = per.startsWith("-") ? per : "+" + per;
                 candles.add(entity);
 
                 float close = entity.getClose();
 
+                //计算ma
                 ma5 += close;
                 if (i == 4) {
                     maLine.getLine(0).add(ma5 / 5);
@@ -277,6 +280,7 @@ public class KLineChartLandActivity extends AppCompatActivity {
                     maLine.getLine(2).add(null);
                 }
 
+                //计算boll
                 ma20 += close;
                 if (i < 19) {
                     bollLine.getLine(0).add(null);
@@ -301,7 +305,7 @@ public class KLineChartLandActivity extends AppCompatActivity {
                 }
 
                 //计算成交量
-                volumeLine.addBarData(entity.getVolume());
+                volumeLine.addData(entity.getVolume());
                 volMa5 += entity.getVolume();
                 if (i < 4) {
                     volumeLine.getLine(0).add(null);
@@ -336,9 +340,12 @@ public class KLineChartLandActivity extends AppCompatActivity {
                 dif = ema12 - ema26;
                 dea = dea * 8f / 10f + dif * 2f / 10f;
                 macd = (dif - dea) * 2f;
-                macdLine.addBarData(macd);
+                macdLine.addData(macd);
                 macdLine.getLine(0).add(dif);
                 macdLine.getLine(1).add(dea);
+
+                emaLine.getLine(0).add(ema12);
+                emaLine.getLine(1).add(ema26);
 
                 //计算kdj
                 int startIndex = i - 13;
@@ -392,7 +399,6 @@ public class KLineChartLandActivity extends AppCompatActivity {
                     rsi = 0f;
 
                 rsiLine.getLine(0).add(rsi);
-
 
                 //计算wr
                 startIndex = i - 14;

@@ -2,7 +2,6 @@ package com.github.wyang.klinechartlib.base;
 
 import android.content.Context;
 import android.database.DataSetObserver;
-import android.graphics.Canvas;
 import android.support.annotation.ColorRes;
 import android.support.annotation.DimenRes;
 import android.support.annotation.Nullable;
@@ -15,14 +14,14 @@ import android.util.TypedValue;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
-import android.view.ViewGroup;
 import android.widget.OverScroller;
+import android.widget.RelativeLayout;
 
 /**
  * Created by weiyang on 2019-11-01.
  * K线图View基类，处理测量逻辑，滑动缩放逻辑，及数据适配器和长按选中哪一项，具体绘制交由子类
  */
-public abstract class BaseChartView<T extends ChartAdapter> extends ViewGroup implements
+public abstract class BaseChartView<T extends ChartAdapter> extends RelativeLayout implements
         GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener {
     protected final String TAG = getClass().getSimpleName();
     protected GestureDetectorCompat mGestureDetector;
@@ -102,16 +101,6 @@ public abstract class BaseChartView<T extends ChartAdapter> extends ViewGroup im
     }
 
     @Override
-    protected void onLayout(boolean changed, int l, int t, int r, int b) {
-
-    }
-
-    @Override
-    protected void onSizeChanged(int w, int h, int oldw, int oldh) {
-        super.onSizeChanged(w, h, oldw, oldh);
-    }
-
-    @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         mWidth = MeasureSpec.getSize(widthMeasureSpec);
         mHeight = (int) (mWidth * aspectRatio);
@@ -127,11 +116,6 @@ public abstract class BaseChartView<T extends ChartAdapter> extends ViewGroup im
                 break;
         }
         setMeasuredDimension(mWidth, mHeight);
-    }
-
-    @Override
-    protected void onDraw(Canvas canvas) {
-        super.onDraw(canvas);
     }
 
     private float downX;
@@ -212,7 +196,7 @@ public abstract class BaseChartView<T extends ChartAdapter> extends ViewGroup im
         //长按选中点index计算，并回调
         int lastIndex = mSelectedIndex;
 
-        mSelectedIndex = indexOfTranslateX(x2TranslateX(e.getX()));
+        mSelectedIndex = indexOfX(drawX2X(e.getX()));
         if (mSelectedIndex < mStartIndex) {
             mSelectedIndex = mStartIndex;
         }
@@ -222,7 +206,7 @@ public abstract class BaseChartView<T extends ChartAdapter> extends ViewGroup im
 
         if (lastIndex != mSelectedIndex) {
             if (onSelectedChangedListener != null) {
-                onSelectedChangedListener.onSelectedChanged(this, getAdapter().getCandle(mSelectedIndex), mSelectedIndex);
+                onSelectedChangedListener.onSelectedChanged(this, mSelectedIndex);
             }
         }
 
@@ -254,7 +238,7 @@ public abstract class BaseChartView<T extends ChartAdapter> extends ViewGroup im
         } else {
             onScaleChanged(oldScaleX);
         }
-        mOffsetX = (mOffsetX + (mWidth >> 1)) * mScaleX / oldScaleX - (mWidth >> 1);
+        mOffsetX = (mOffsetX + mWidth * 0.5f) * mScaleX / oldScaleX - mWidth * 0.5f;
         mDataLength = mAdapter.getCount() * mPointWidth * mScaleX;
         checkOffsetX();
 
@@ -443,69 +427,46 @@ public abstract class BaseChartView<T extends ChartAdapter> extends ViewGroup im
         invalidate();
     }
 
-    /**
-     * 第一个数据相对屏幕最左侧的偏移量
-     */
-    private float getOffsetX() {
-        return mOffsetX;
+    public float drawX2X(float x) {
+        return mOffsetX + x;
     }
 
-    /**
-     * view中的x转化为TranslateX
-     *
-     * @param x
-     * @return
-     */
-    public float x2TranslateX(float x) {
-        return getOffsetX() + x;
-    }
-
-    /**
-     * translateX转化为view中的x
-     *
-     * @param translateX
-     * @return
-     */
-    public float translateX2X(float translateX) {
-        return (translateX - getOffsetX());
-    }
-
-    public int indexOfTranslateX(float translateX) {
-        return indexOfTranslateX(translateX, 0, getAdapter().getCount() - 1);
+    public int indexOfX(float x) {
+        return indexOfX(x, 0, getAdapter().getCount() - 1);
     }
 
     /**
      * 二分查找当前值的index
      */
-    public int indexOfTranslateX(float translateX, int start, int end) {
+    public int indexOfX(float x, int start, int end) {
         if (end == start) {
             return start;
         }
         if (end - start == 1) {
-            float startValue = getX(start);
-            float endValue = getX(end);
-            return Math.abs(translateX - startValue) < Math.abs(translateX - endValue) ? start : end;
+            float startX = getX(start);
+            float endX = getX(end);
+            return Math.abs(x - startX) < Math.abs(x - endX) ? start : end;
         }
         int mid = start + (end - start) / 2;
-        float midValue = getX(mid);
-        if (translateX < midValue) {
-            return indexOfTranslateX(translateX, start, mid);
-        } else if (translateX > midValue) {
-            return indexOfTranslateX(translateX, mid, end);
+        float midX = getX(mid);
+        if (x < midX) {
+            return indexOfX(x, start, mid);
+        } else if (x > midX) {
+            return indexOfX(x, mid, end);
         } else {
             return mid;
         }
     }
 
     /**
-     * 根据索引索取x坐标
+     * mOffsetX==0时，每个数据相对坐标原点的x值
      */
-    public float getX(int position) {
+    private float getX(int position) {
         return (position + 0.5f) * mPointWidth * mScaleX;
     }
 
     public float getDrawX(int position) {
-        return getX(position) - getOffsetX();
+        return getX(position) - mOffsetX;
     }
 
     public void setPointWidth(float mItemWidth) {
@@ -529,7 +490,7 @@ public abstract class BaseChartView<T extends ChartAdapter> extends ViewGroup im
          * @param point 选中的点
          * @param index 选中点的索引
          */
-        void onSelectedChanged(BaseChartView view, ICandle point, int index);
+        void onSelectedChanged(BaseChartView view, int index);
     }
 
     public void log(String text) {
