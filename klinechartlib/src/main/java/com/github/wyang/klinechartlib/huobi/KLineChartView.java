@@ -18,27 +18,24 @@ import android.util.AttributeSet;
 
 import com.github.wyang.klinechartlib.R;
 import com.github.wyang.klinechartlib.base.BaseChartView;
-import com.github.wyang.klinechartlib.huobi.data.ICandle;
 import com.github.wyang.klinechartlib.base.IDateFormatter;
 import com.github.wyang.klinechartlib.base.IValueFormatter;
+import com.github.wyang.klinechartlib.data.ICandle;
 import com.github.wyang.klinechartlib.formatter.DateFormatter;
 import com.github.wyang.klinechartlib.formatter.PercentValueFormatter;
 import com.github.wyang.klinechartlib.formatter.PriceFormatter;
 import com.github.wyang.klinechartlib.formatter.VolumeFormatter;
-import com.github.wyang.klinechartlib.huobi.draw.ChildDraw1;
-import com.github.wyang.klinechartlib.huobi.draw.ChildDraw2;
+import com.github.wyang.klinechartlib.huobi.draw.ChildDraw;
 import com.github.wyang.klinechartlib.huobi.draw.MainDraw;
 import com.github.wyang.klinechartlib.huobi.helper.LinePathHelper;
 import com.github.wyang.klinechartlib.huobi.helper.TextDrawHelper;
 import com.github.wyang.klinechartlib.utils.PointFPool;
 
-import java.util.ArrayList;
-import java.util.List;
-
 /**
  * Created by weiyang on 2019-11-04.
  * 高仿火币K线图，界面绘制结构为：烛状图（主图） + 2个指标图（副图，最少显示一个）
  * 这里实现是在一个ViewGroup里画主图及子图，MPAndroidChart每一个图对应一个ViewGroup（使用较为麻烦）
+ * 这里仅实现绘制蜡烛图图及添加辅助线，子图的Candle使用美国线绘制
  */
 public class KLineChartView extends BaseChartView<KLineChartAdapter> {
     private int mGridRows = 5;//行
@@ -70,7 +67,7 @@ public class KLineChartView extends BaseChartView<KLineChartAdapter> {
     /**
      * 最新价基准线（最后一个数据的收盘价）
      */
-    private Paint mBaseLinePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private Paint mBaselinePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     /**
      * 画圆的画笔（分时图的最新价，选中默一点时）
      */
@@ -93,22 +90,29 @@ public class KLineChartView extends BaseChartView<KLineChartAdapter> {
 
     @ColorInt
     private int axisTextColor;
-    private int axisYTextPadding;
+    private int axisTextPadding;
 
-    private int riseFill = 1 << 1;
-    private int fallFill = 1;
-    private int fillMode = riseFill | fallFill;
+    private int increaseFill = 1 << 1;
+    private int decreaseFill = 1;
+    private int fillMode = increaseFill | decreaseFill;
     @ColorInt
-    private int colorRise;//涨的颜色
+    private int colorIncrease;//涨的颜色
     @ColorInt
-    private int colorFall;//跌的颜色
+    private int colorDecrease;//跌的颜色
+    @ColorInt
+    private int colorCandle;//子图Candle 颜色 参考腾讯自选股
+
+    @ColorInt
+    private int baselineColorDefault;//收盘线默认色，最后一个数据不可见时
+    @ColorInt
+    private int baselineColorHighlight;//收盘线高亮色，最后一个数据完全滑出时
 
     private TextDrawHelper mTextDrawHelper;
 
     private LinePathHelper mLinePathHelper;
-    private MainDraw mMainRect;
-    private ChildDraw1 mChildRect1;
-    private ChildDraw2 mChildRect2;
+    private MainDraw mMainDraw;
+    private ChildDraw mChildDraw1;
+    private ChildDraw mChildDraw2;
 
     private boolean isBottomAxisX = true;//x轴绘制于View的底部，反之则在主图底部
     private boolean isShowChild2 = true;//是否显示副图
@@ -135,27 +139,29 @@ public class KLineChartView extends BaseChartView<KLineChartAdapter> {
 
         initAttrs(context, attrs);
 
-        axisYTextPadding = (int) dp2px(5);
+        axisTextPadding = (int) dp2px(5);
 
         mTextDrawHelper = new TextDrawHelper();
 
         mLinePathHelper = new LinePathHelper();
 
-        mMainRect = new MainDraw(this, mLinePathHelper);
-        mChildRect1 = new ChildDraw1(this, mLinePathHelper);
-        mChildRect2 = new ChildDraw2(this, mLinePathHelper);
+        mMainDraw = new MainDraw(this, mLinePathHelper);
+        mChildDraw1 = new ChildDraw(this, mLinePathHelper);
+        mChildDraw2 = new ChildDraw(this, mLinePathHelper);
 
-        mMainRect.setTopSpacing(getTopSpacing() * 2);
-        mChildRect1.setTopSpacing(getTopSpacing());
-        mChildRect2.setTopSpacing(getTopSpacing());
+        mMainDraw.setTopSpacing(getTopSpacing() * 2 + getAxisTextPadding());
+        mChildDraw1.setTopSpacing(getTopSpacing());
+        mChildDraw2.setTopSpacing(getTopSpacing());
 
         mLinePaint.setStyle(Paint.Style.STROKE);
 
-        mBaseLinePaint.setStyle(Paint.Style.STROKE);
-        mBaseLinePaint.setPathEffect(new DashPathEffect(new float[]{20, 10}, 0));
+        mBaselinePaint.setStyle(Paint.Style.STROKE);
+        mBaselinePaint.setPathEffect(new DashPathEffect(new float[]{20, 10}, 0));
 
         mSelectedYLinePaint.setStrokeWidth(mPointWidth);
         mSelectedYLinePaint.setColor(0xffaaaaaa);
+
+        mFramePaint.setColor(0xff081928);
 
         mStrokePaint.setStyle(Paint.Style.STROKE);
         mStrokePaint.setStrokeWidth(dp2px(.5f));
@@ -178,55 +184,60 @@ public class KLineChartView extends BaseChartView<KLineChartAdapter> {
 
     private void initAttrs(Context context, AttributeSet attrs) {
         if (attrs != null) {
-            TypedArray typedArray = context.obtainStyledAttributes(attrs, R.styleable.KLineChartView);
+            TypedArray a = context.obtainStyledAttributes(attrs, R.styleable.KLineChartView);
 
-            setPointWidth(typedArray.getDimension(R.styleable.KLineChartView_kc_point_width, getDimension(R.dimen.chart_point_width)));
+            setGridLineWidth(a.getDimension(R.styleable.KLineChartView_kc_grid_line_width, getDimension(R.dimen.chart_grid_line_width)));
+            setGridLineColor(a.getColor(R.styleable.KLineChartView_kc_grid_line_color, getColor(R.color.chart_grid_line)));
 
-            setCandleWidth(typedArray.getDimension(R.styleable.KLineChartView_kc_candle_width, getDimension(R.dimen.chart_candle_width)));
-            setCandleLineWidth(typedArray.getDimension(R.styleable.KLineChartView_kc_candle_line_width, getDimension(R.dimen.chart_candle_line_width)));
+            setPointWidth(a.getDimension(R.styleable.KLineChartView_kc_point_width, getDimension(R.dimen.chart_point_width)));
 
-            setGridLineWidth(typedArray.getDimension(R.styleable.KLineChartView_kc_grid_line_width, getDimension(R.dimen.chart_grid_line_width)));
-            setGridLineColor(typedArray.getColor(R.styleable.KLineChartView_kc_grid_line_color, getColor(R.color.chart_grid_line)));
+            setCandleWidth(a.getDimension(R.styleable.KLineChartView_kc_candle_width, getDimension(R.dimen.chart_candle_width)));
+            setCandleLineWidth(a.getDimension(R.styleable.KLineChartView_kc_candle_line_width, getDimension(R.dimen.chart_candle_line_width)));
 
-            setLineWidth(typedArray.getDimension(R.styleable.KLineChartView_kc_line_width, getDimension(R.dimen.chart_line_width)));
+            setColorIncrease(a.getColor(R.styleable.KLineChartView_kc_increase_color, getColor(R.color.chart_red)));
+            setColorDecrease(a.getColor(R.styleable.KLineChartView_kc_decrease_color, getColor(R.color.chart_green)));
 
-            setAxisTextColor(typedArray.getColor(R.styleable.KLineChartView_kc_text_color, getColor(R.color.chart_text)));
-            setTextSize(typedArray.getDimension(R.styleable.KLineChartView_kc_text_size, getDimension(R.dimen.chart_text_size)));
+            setColorCandle(a.getColor(R.styleable.KLineChartView_kc_candle_color, getColor(R.color.chart_close_line)));
 
-            setHighlightColor(typedArray.getColor(R.styleable.KLineChartView_kc_highlight_color, getColor(R.color.chart_highlight)));
-            setHighlightSize(typedArray.getDimension(R.styleable.KLineChartView_kc_highlight_size, getDimension(R.dimen.chart_highlight_size)));
+            setLineWidth(a.getDimension(R.styleable.KLineChartView_kc_line_width, getDimension(R.dimen.chart_line_width)));
+            setBaselineWidth(a.getDimension(R.styleable.KLineChartView_kc_baseline_width, getDimension(R.dimen.chart_baseline_width)));
+            setBaselineColorDefault(a.getColor(R.styleable.KLineChartView_kc_baseline_color_default, getColor(R.color.chart_baseline_color_default)));
+            setBaselineColorHighlight(a.getColor(R.styleable.KLineChartView_kc_baseline_color_default, getColor(R.color.chart_baseline_color_highlight)));
 
-            setColorRise(getColor(R.color.chart_red));
-            setColorFall(getColor(R.color.chart_green));
+            setAxisTextColor(a.getColor(R.styleable.KLineChartView_kc_text_color, getColor(R.color.chart_text)));
+            setTextSize(a.getDimension(R.styleable.KLineChartView_kc_text_size, getDimension(R.dimen.chart_text_size)));
 
-            typedArray.recycle();
+            setHighlightColor(a.getColor(R.styleable.KLineChartView_kc_highlight_color, getColor(R.color.chart_highlight)));
+            setHighlightSize(a.getDimension(R.styleable.KLineChartView_kc_highlight_size, getDimension(R.dimen.chart_highlight_size)));
+
+            a.recycle();
         }
     }
 
     @Override
     protected boolean isLine() {
-        return mMainRect.isLine();
+        return mMainDraw.isLine();
     }
 
     public void initChartPart() {
-        float mGridHeight = mHeight - mMainRect.getTopSpacing() - getAxisXHeight();
+        float mGridHeight = mHeight - mMainDraw.getTopSpacing() - getAxisXHeight();
 
         float avg = mGridHeight * 1f / mGridRows;
 
         float left = 0;
         float top = 0;
         float right = mWidth;
-        float bottom = top + (mGridRows - (isShowChild2 ? 2 : 1)) * avg + mMainRect.getTopSpacing();
-        mMainRect.setBounds(left, top, right, bottom);
+        float bottom = top + (mGridRows - (isShowChild2 ? 2 : 1)) * avg + mMainDraw.getTopSpacing();
+        mMainDraw.setBounds(left, top, right, bottom);
 
-        top = mMainRect.getBottom() + (!isBottomAxisX ? getAxisXHeight() : 0);
+        top = mMainDraw.getBottom() + (!isBottomAxisX ? getAxisXHeight() : 0);
         bottom = top + avg;
-        mChildRect1.setBounds(left, top, right, bottom);
+        mChildDraw1.setBounds(left, top, right, bottom);
 
         if (isShowChild2) {
-            top = mChildRect1.getBottom();
+            top = mChildDraw1.getBottom();
             bottom = top + avg;
-            mChildRect2.setBounds(left, top, right, bottom);
+            mChildDraw2.setBounds(left, top, right, bottom);
         }
     }
 
@@ -242,8 +253,6 @@ public class KLineChartView extends BaseChartView<KLineChartAdapter> {
 
     @Override
     protected void onScaleChanged(float oldScale) {
-        super.onScaleChanged(oldScale);
-
         mCandleWidth = mPointWidth * mScaleX - mCandleLineWidth;
         mSelectedYLinePaint.setStrokeWidth(mPointWidth * mScaleX);
     }
@@ -266,14 +275,14 @@ public class KLineChartView extends BaseChartView<KLineChartAdapter> {
 
         if (mAdapter.getCount() == 0)
             return;
+
         calculateValue();
 
-
-        mMainRect.draw(canvas);
-        mChildRect1.draw(canvas);
+        mMainDraw.draw(canvas);
+        mChildDraw1.draw(canvas);
 
         if (isShowChild2)
-            mChildRect2.draw(canvas);
+            mChildDraw2.draw(canvas);
 
         //绘制坐标轴文本
         drawAxisText(canvas);
@@ -296,67 +305,73 @@ public class KLineChartView extends BaseChartView<KLineChartAdapter> {
         mStartIndex = indexOfX(drawX2X(0));
         mEndIndex = indexOfX(drawX2X(mWidth));
 
-        mMainRect.resetMaxMinValue();
-        mChildRect1.resetMaxMinValue();
-        mChildRect2.resetMaxMinValue();
-
         for (int i = mStartIndex; i <= mEndIndex; i++) {
-            mMainRect.calcMinMax(i);
+            mMainDraw.calcMinMax(i, i == mStartIndex);
 
-            mChildRect1.calcMinMax(i);
+            mChildDraw1.calcMinMax(i, i == mStartIndex);
 
-            mChildRect2.calcMinMax(i);
+            mChildDraw2.calcMinMax(i, i == mStartIndex);
         }
 
-        if (mMainRect != null)
-            mMainRect.fixMaxMin();
-
+        mMainDraw.fixMaxMin(mTextDrawHelper.getTextHeight(mHighLightPaint));
+        //mChildDraw1.fixMaxMin(mLinePaint.getStrokeWidth());
+        mChildDraw2.fixMaxMin(mLinePaint.getStrokeWidth());
     }
 
     private void drawGrid(Canvas canvas) {
         //横向的grid
-        canvas.drawLine(0, mMainRect.getTop(), mWidth, mMainRect.getTop(), mGridPaint);
-        float rowSpace = 1.0f * (mMainRect.getMinAxisY() - mMainRect.getMaxAxisY()) / (mGridRows - (isShowChild2 ? 2 : 1));
+        canvas.drawLine(0, mMainDraw.getTop(), mWidth, mMainDraw.getTop(), mGridPaint);
+        float rowSpace = 1.0f * (mMainDraw.getMinAxisY() - mMainDraw.getMaxAxisY()) / (mGridRows - (isShowChild2 ? 2 : 1));
         for (int i = 0; i <= mGridRows - (isShowChild2 ? 2 : 1); i++) {
-            canvas.drawLine(0, rowSpace * i + mMainRect.getMaxAxisY(), mWidth, rowSpace * i + mMainRect.getMaxAxisY(), mGridPaint);
+            canvas.drawLine(0, rowSpace * i + mMainDraw.getMaxAxisY(), mWidth, rowSpace * i + mMainDraw.getMaxAxisY(), mGridPaint);
         }
         //-----------------------下方子图------------------------
         if (!isBottomAxisX)
-            canvas.drawLine(0, mChildRect1.getTop(), mWidth, mChildRect1.getTop(), mGridPaint);
-        canvas.drawLine(0, mChildRect1.getMinAxisY(), mWidth, mChildRect1.getMinAxisY(), mGridPaint);
+            canvas.drawLine(0, mChildDraw1.getTop(), mWidth, mChildDraw1.getTop(), mGridPaint);
+        canvas.drawLine(0, mChildDraw1.getMinAxisY(), mWidth, mChildDraw1.getMinAxisY(), mGridPaint);
         if (isShowChild2)
-            canvas.drawLine(0, mChildRect2.getMinAxisY(), mWidth, mChildRect2.getMinAxisY(), mGridPaint);
+            canvas.drawLine(0, mChildDraw2.getMinAxisY(), mWidth, mChildDraw2.getMinAxisY(), mGridPaint);
 
         //纵向的grid
         float columnSpace = 1.0f * mWidth / mGridColumns;
         for (int i = isDrawGridStartEnd ? 0 : 1; i <= (isDrawGridStartEnd ? mGridColumns : mGridColumns - 1); i++) {
-            canvas.drawLine(columnSpace * i, 0, columnSpace * i, mMainRect.getMinAxisY(), mGridPaint);
-            canvas.drawLine(columnSpace * i, mChildRect1.getTop(), columnSpace * i, mChildRect1.getBottom(), mGridPaint);
+            canvas.drawLine(columnSpace * i, 0, columnSpace * i, mMainDraw.getMinAxisY(), mGridPaint);
+            canvas.drawLine(columnSpace * i, mChildDraw1.getTop(), columnSpace * i, mChildDraw1.getBottom(), mGridPaint);
             if (isShowChild2)
-                canvas.drawLine(columnSpace * i, mChildRect2.getTop(), columnSpace * i, mChildRect2.getBottom(), mGridPaint);
+                canvas.drawLine(columnSpace * i, mChildDraw2.getTop(), columnSpace * i, mChildDraw2.getBottom(), mGridPaint);
         }
     }
 
     /**
-     * 绘制主图蜡烛
+     * 绘制蜡烛矩形
      */
-    public void drawCandle(Canvas canvas, float x, float top, float bottom, boolean isRise) {
+    public void drawCandle(Canvas canvas, float x, float top, float bottom, boolean isIncrease) {
         tempRect.set(x - mCandleWidth * .5f, top, x + mCandleWidth * .5f, bottom);
-        if (isRise) {
-            mCandlePaint.setStyle(isRiseFill() ? Paint.Style.FILL : Paint.Style.STROKE);
+        if (isIncrease) {
+            mCandlePaint.setStyle(getIncreaseFill() ? Paint.Style.FILL : Paint.Style.STROKE);
         } else {
-            mCandlePaint.setStyle(isFallFill() ? Paint.Style.FILL : Paint.Style.STROKE);
+            mCandlePaint.setStyle(getDecreaseFill() ? Paint.Style.FILL : Paint.Style.STROKE);
         }
-        mCandlePaint.setColor(isRise ? colorRise : colorFall);
+        mCandlePaint.setColor(isIncrease ? colorIncrease : colorDecrease);
         canvas.drawRect(tempRect, mCandlePaint);
     }
 
     /**
-     * 绘制主图蜡烛图上下影线
+     * 绘制蜡烛图上下影线
      */
     public void drawCandleLine(Canvas canvas, float x, float startY, float stopY) {
         mCandlePaint.setStyle(Paint.Style.STROKE);
         canvas.drawLine(x, startY, x, stopY, mCandlePaint);
+    }
+
+    /**
+     * 子图美国线的绘制
+     */
+    public void drawAmericanLine(Canvas canvas, float x, float[] arrY) {
+        mLinePaint.setColor(colorCandle);
+        canvas.drawLine(x, arrY[2], x, arrY[3], mLinePaint);
+        canvas.drawLine(x - mCandleWidth * .5f, arrY[0], x, arrY[0], mLinePaint);
+        canvas.drawLine(x + mCandleWidth * .5f, arrY[1], x, arrY[1], mLinePaint);
     }
 
     /**
@@ -365,10 +380,22 @@ public class KLineChartView extends BaseChartView<KLineChartAdapter> {
     public void drawFillCandle(Canvas canvas, float x, float top, float bottom, boolean isRise) {
         tempRect.set(x - mCandleWidth * .5f, top, x + mCandleWidth * .5f, bottom);
         mCandlePaint.setStyle(Paint.Style.FILL);
-        mCandlePaint.setColor(isRise ? colorRise : colorFall);
+        mCandlePaint.setColor(isRise ? colorIncrease : colorDecrease);
         canvas.drawRect(tempRect, mCandlePaint);
     }
 
+    /**
+     * sar指标绘制圆圈
+     */
+    public void drawCircle(Canvas canvas, float x, float y, boolean isIncrease) {
+        mCandlePaint.setStyle(Paint.Style.STROKE);
+        mCandlePaint.setColor(isIncrease ? colorIncrease : colorDecrease);
+        canvas.drawCircle(x, y, 5, mCandlePaint);
+    }
+
+    /**
+     * 绘制指标线
+     */
     public void drawLinePath(Canvas canvas, Path path, @ColorInt int color) {
         mLinePaint.setStyle(Paint.Style.STROKE);
         mLinePaint.setColor(color);
@@ -377,6 +404,9 @@ public class KLineChartView extends BaseChartView<KLineChartAdapter> {
         canvas.drawPath(path, mLinePaint);
     }
 
+    /**
+     * 绘制收盘线（分时线）
+     */
     public void drawFillPath(Canvas canvas, Path path, @ColorInt int color, Shader shader) {
         mLinePaint.setStyle(Paint.Style.FILL);
         mLinePaint.setColor(color);
@@ -408,25 +438,25 @@ public class KLineChartView extends BaseChartView<KLineChartAdapter> {
             String text = getDateFormatter().format(mAdapter.getCandle(index).getTime());
 
             p.x = columnSpace * i;
-            p.y = isBottomAxisX ? mChildRect2.getBottom() : mMainRect.getBottom();
+            p.y = isBottomAxisX ? mChildDraw2.getBottom() : mMainDraw.getBottom();
             mTextDrawHelper.drawPointBot(canvas, text, p, mTextPaint);
         }
 
         //画y轴 主图文本
-        float rowValue = (mMainRect.getMaxValue() - mMainRect.getMinValue()) / (mGridRows - 2);
-        float rowSpace = 1.0f * (mMainRect.getMinAxisY() - mMainRect.getMaxAxisY()) / (mGridRows - 2);
+        float rowValue = (mMainDraw.getMaxValue() - mMainDraw.getMinValue()) / (mGridRows - 2);
+        float rowSpace = 1.0f * (mMainDraw.getMinAxisY() - mMainDraw.getMaxAxisY()) / (mGridRows - 2);
         for (int i = 0; i <= mGridRows - 2; i++) {
-            String text = getPriceFormatter().format(rowValue * (mGridRows - 2 - i) + mMainRect.getMinValue());
+            String text = getPriceFormatter().format(rowValue * (mGridRows - 2 - i) + mMainDraw.getMinValue());
 
-            p.x = mWidth - axisYTextPadding;
-            p.y = mMainRect.getMaxAxisY() + rowSpace * i;
+            p.x = mWidth - axisTextPadding;
+            p.y = mMainDraw.getMaxAxisY() + rowSpace * i;
             mTextDrawHelper.drawPointLeftTop(canvas, text, p, mTextPaint);
         }
 
         //画y轴 成交量文本
-        String text = getVolumeFormatter().format(mChildRect1.getMaxValue());
-        p.x = mWidth - axisYTextPadding;
-        p.y = mChildRect1.getMaxAxisY();
+        String text = getVolumeFormatter().format(mChildDraw1.getMaxValue());
+        p.x = mWidth - axisTextPadding;
+        p.y = mChildDraw1.getMaxAxisY();
         mTextDrawHelper.drawPointLeftTop(canvas, text, p, mTextPaint);
 
         PointFPool.recycle(p);
@@ -438,17 +468,17 @@ public class KLineChartView extends BaseChartView<KLineChartAdapter> {
     public void drawBaseLine(Canvas canvas) {
         //绘制最新价基准线
         float latestPrice = mAdapter.getLatestPrice();
-        float closeY = mMainRect.getAxisY(latestPrice);
+        float closeY = mMainDraw.getAxisY(latestPrice);
         //最新价字符串
         String text = getPriceFormatter().format(latestPrice);
 
-        float w = mTextPaint.measureText(text) + axisYTextPadding * 2;
+        float w = mTextPaint.measureText(text) + axisTextPadding * 2;
         if (mWidth - w > getDrawX(mEndIndex) + mPointWidth / 2) {
-            mBaseLinePaint.setColor(0xff5187EC);
-            canvas.drawLine(getDrawX(mEndIndex), closeY, mWidth, closeY, mBaseLinePaint);
+            mBaselinePaint.setColor(baselineColorHighlight);
+            canvas.drawLine(getDrawX(mEndIndex), closeY, mWidth, closeY, mBaselinePaint);
 
             //分时线时，绘制小圆点
-            if (mMainRect.isLine() && isLastVisible()) {
+            if (mMainDraw.isLine() && isLastVisible()) {
                 float x = getDrawX(mEndIndex);
 
                 circleGradient = new RadialGradient(x, closeY, 1.5f * mPointWidth, 0x66ffffff, 0x00ffffff, Shader.TileMode.CLAMP);
@@ -469,17 +499,17 @@ public class KLineChartView extends BaseChartView<KLineChartAdapter> {
             tempRect.set(left, top, right, bottom);
             canvas.drawRect(tempRect, mFramePaint);
 
-            mTextPaint.setColor(mBaseLinePaint.getColor());
+            mTextPaint.setColor(mBaselinePaint.getColor());
             PointF pointF = PointFPool.get(tempRect.centerX(), tempRect.centerY());
             mTextDrawHelper.drawPointCenter(canvas, text, pointF, mTextPaint);
             PointFPool.recycle(pointF);
         } else {
-            mBaseLinePaint.setColor(0xffaaaaaa);
-            canvas.drawLine(0, closeY, mWidth, closeY, mBaseLinePaint);
+            mBaselinePaint.setColor(baselineColorDefault);
+            canvas.drawLine(0, closeY, mWidth, closeY, mBaselinePaint);
 
             //画最后一个收盘价
             text += " ▶";
-            w = mHighLightPaint.measureText(text) + axisYTextPadding * 2;
+            w = mHighLightPaint.measureText(text) + axisTextPadding * 2;
             float radius = mTextDrawHelper.getTextHeight(mHighLightPaint) / 2;
             float left = (mWidth - w) * 4.0f / 5;
             float top = closeY - radius;
@@ -505,14 +535,14 @@ public class KLineChartView extends BaseChartView<KLineChartAdapter> {
             ICandle candle = mAdapter.getCandle(mSelectedIndex);
 
             float x = getDrawX(mSelectedIndex);//选中数据对应View的x坐标
-            float y = mMainRect.getAxisY(candle.getClose());//选中数据收盘价对应View的y坐标
+            float y = mMainDraw.getAxisY(candle.getClose());//选中数据收盘价对应View的y坐标
 
             //绘制选择竖线
             mSelectedYLinePaint.setAlpha(0x33);
-            LinearGradient shader = new LinearGradient(x, mMainRect.getMaxAxisY(), x, mChildRect2.getMinAxisY(),
+            LinearGradient shader = new LinearGradient(x, mMainDraw.getMaxAxisY(), x, mChildDraw2.getMinAxisY(),
                     new int[]{0x11ffffff, 0xffffffff, 0x11ffffff}, new float[]{0, .5f, 1f}, Shader.TileMode.CLAMP);
             mSelectedYLinePaint.setShader(shader);
-            canvas.drawLine(x, mMainRect.getMaxAxisY(), x, mHeight, mSelectedYLinePaint);
+            canvas.drawLine(x, mMainDraw.getMaxAxisY(), x, mHeight, mSelectedYLinePaint);
 
             //选中收盘价的大圆带透明
             mSelectedYLinePaint.setAlpha(0x44);
@@ -523,7 +553,6 @@ public class KLineChartView extends BaseChartView<KLineChartAdapter> {
             canvas.drawLine(0, y, mWidth, y, mStrokePaint);
             canvas.drawCircle(x, y, 5, mCirclePaint);
 
-            //float w1 = dp2px(3);
             float padding = dp2px(5);
 
             //当前选中数据的收盘价
@@ -566,9 +595,9 @@ public class KLineChartView extends BaseChartView<KLineChartAdapter> {
             //当前选中数据时间
             String date = getDateFormatter().format(candle.getTime());
             if (!isBottomAxisX) {
-                y = mMainRect.getMinAxisY();
+                y = mMainDraw.getMinAxisY();
             } else {
-                y = mChildRect2.getMinAxisY();
+                y = mChildDraw2.getMinAxisY();
             }
             float dateWidth = mHighLightPaint.measureText(date);
             if (x < dateWidth + 2 * padding) {
@@ -588,10 +617,10 @@ public class KLineChartView extends BaseChartView<KLineChartAdapter> {
             mTextDrawHelper.drawPointCenter(canvas, date, p, mHighLightPaint);
             PointFPool.recycle(p);
 
-            if (!mMainRect.isLine()) {
+             /*if (!mMainDraw.isLine()) {
                 float width = 0;
-                top = padding + mMainRect.getMaxAxisY();
                 float height;
+                top = padding + mMainDraw.getMaxAxisY();
 
                 List<String> labels = new ArrayList<>();
                 labels.add(getString(R.string.chart_date));
@@ -618,7 +647,7 @@ public class KLineChartView extends BaseChartView<KLineChartAdapter> {
 
                 for (int i = 0; i < labels.size(); i++) {
                     String str = labels.get(i) + values.get(i);
-                    width = Math.max(width, mHighLightPaint.measureText(str.replace("-", "+")));
+                    width = Math.max(width, mTextPaint.measureText(str.replace("-", "+")));
                 }
 
                 width += padding * 3;
@@ -629,13 +658,20 @@ public class KLineChartView extends BaseChartView<KLineChartAdapter> {
                     left = mWidth - width - padding;
                 }
 
-                height = padding * (labels.size() + 1) + halfHeight * 2 * labels.size();
+                float h = mTextDrawHelper.getTextHeight(mTextPaint);
+                height = padding * 2 + h * labels.size();
 
                 tempRect.set(left, top, left + width, top + height);
+
+                mFramePaint.setAlpha(0xaa);
                 canvas.drawRoundRect(tempRect, 2, 2, mFramePaint);
                 canvas.drawRoundRect(tempRect, 2, 2, mStrokePaint);
+                mFramePaint.setAlpha(0xff);
+
 
                 y = top + padding * 1;
+
+                mTextPaint.setColor(axisTextColor);
                 PointF p1 = PointFPool.get(0, 0);
                 for (int i = 0; i < labels.size(); i++) {
                     String label = labels.get(i);
@@ -643,16 +679,16 @@ public class KLineChartView extends BaseChartView<KLineChartAdapter> {
 
                     p1.x = left + padding;
                     p1.y = y;
-                    mTextDrawHelper.drawPointRightBot(canvas, label, p1, mHighLightPaint);
+                    mTextDrawHelper.drawPointRightBot(canvas, label, p1, mTextPaint);
 
-                    p1.x = left + width - mHighLightPaint.measureText(value) - padding;
+                    p1.x = left + width - mTextPaint.measureText(value) - padding;
                     p1.y = y;
-                    mTextDrawHelper.drawPointRightBot(canvas, value, p1, mHighLightPaint);
+                    mTextDrawHelper.drawPointRightBot(canvas, value, p1, mTextPaint);
 
-                    y += halfHeight * 2 + padding;
+                    y += h;
                 }
                 PointFPool.recycle(p1);
-            }
+            }*/
         }
     }
 
@@ -660,21 +696,29 @@ public class KLineChartView extends BaseChartView<KLineChartAdapter> {
         isDrawGridStartEnd = drawGridStartEnd;
     }
 
-    public void setColorRise(@ColorInt int color) {
-        this.colorRise = color;
+    public void setColorIncrease(@ColorInt int color) {
+        this.colorIncrease = color;
     }
 
-    public void setColorFall(@ColorInt int color) {
-        this.colorFall = color;
+    public void setColorDecrease(@ColorInt int color) {
+        this.colorDecrease = color;
+    }
+
+    public void setColorCandle(@ColorInt int color) {
+        this.colorCandle = color;
     }
 
     public void setAxisTextColor(@ColorInt int color) {
         this.axisTextColor = color;
     }
 
+    public void setAxisTextPadding(int padding) {
+        this.axisTextPadding = padding;
+    }
+
     public void setTextSize(float textSize) {
         mTextPaint.setTextSize(textSize);
-        mBaseLinePaint.setTextSize(textSize);
+        mBaselinePaint.setTextSize(textSize);
     }
 
     public void setHighlightColor(@ColorInt int color) {
@@ -695,7 +739,18 @@ public class KLineChartView extends BaseChartView<KLineChartAdapter> {
 
     public void setLineWidth(float lineWidth) {
         mLinePaint.setStrokeWidth(lineWidth);
-        mBaseLinePaint.setStrokeWidth(lineWidth);
+    }
+
+    public void setBaselineWidth(float baselineWidth) {
+        mBaselinePaint.setStrokeWidth(baselineWidth);
+    }
+
+    public void setBaselineColorDefault(@ColorInt int color) {
+        this.baselineColorDefault = color;
+    }
+
+    public void setBaselineColorHighlight(@ColorInt int color) {
+        this.baselineColorHighlight = color;
     }
 
     /**
@@ -721,21 +776,21 @@ public class KLineChartView extends BaseChartView<KLineChartAdapter> {
      */
     public void setCandleFill(Boolean fillRst) {
         if (fillRst == null)
-            fillMode = riseFill | fallFill;
+            fillMode = increaseFill | decreaseFill;
         else if (fillRst)
-            fillMode = riseFill;
+            fillMode = increaseFill;
         else
-            fillMode = fallFill;
+            fillMode = decreaseFill;
 
         postInvalidate();
     }
 
-    public boolean isRiseFill() {
-        return (fillMode & riseFill) == riseFill;
+    public boolean getIncreaseFill() {
+        return (fillMode & increaseFill) == increaseFill;
     }
 
-    public boolean isFallFill() {
-        return (fillMode & fallFill) == fallFill;
+    public boolean getDecreaseFill() {
+        return (fillMode & decreaseFill) == decreaseFill;
     }
 
     public Paint getGridPaint() {
@@ -754,8 +809,8 @@ public class KLineChartView extends BaseChartView<KLineChartAdapter> {
         return mSelectedYLinePaint;
     }
 
-    public Paint getBaseLinePaint() {
-        return mBaseLinePaint;
+    public Paint getBaselinePaint() {
+        return mBaselinePaint;
     }
 
     public TextDrawHelper getTextDrawHelper() {
@@ -783,8 +838,16 @@ public class KLineChartView extends BaseChartView<KLineChartAdapter> {
         return mTextDrawHelper.getTextHeight(mHighLightPaint);
     }
 
+    public float getDefaultTextHeight() {
+        return mTextDrawHelper.getTextHeight(mTextPaint);
+    }
+
+    public int getAxisTextPadding() {
+        return axisTextPadding;
+    }
+
     public void setMode(@MainDraw.Mode int mode) {
-        mMainRect.setMode(mode);
+        mMainDraw.setMode(mode);
 
         float oldScaleX = mScaleX;
         if (isLine())
@@ -794,6 +857,24 @@ public class KLineChartView extends BaseChartView<KLineChartAdapter> {
         onScaleChanged(oldScaleX);
 
         mAdapter.notifyDataSetChanged();
+    }
+
+    public void setMainSelected(String name) {
+        mMainDraw.setName(name);
+
+        mAdapter.notifyDataSetInvalidated();
+    }
+
+    public void setChild1Selected(String name) {
+        mChildDraw1.setName(name);
+
+        mAdapter.notifyDataSetInvalidated();
+    }
+
+    public void setChild2Selected(String name) {
+        mChildDraw2.setName(name);
+
+        mAdapter.notifyDataSetInvalidated();
     }
 
     public IValueFormatter getPriceFormatter() {

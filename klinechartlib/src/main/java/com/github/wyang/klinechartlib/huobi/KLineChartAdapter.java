@@ -1,96 +1,71 @@
 package com.github.wyang.klinechartlib.huobi;
 
 import com.github.wyang.klinechartlib.base.ChartAdapter;
-import com.github.wyang.klinechartlib.huobi.interfaces.IBarLineSet;
-import com.github.wyang.klinechartlib.huobi.data.ICandle;
-import com.github.wyang.klinechartlib.huobi.interfaces.IBarLineSetProvider;
+import com.github.wyang.klinechartlib.data.ICandle;
+import com.github.wyang.klinechartlib.huobi.interfaces.IDataLineSet;
+import com.github.wyang.klinechartlib.huobi.interfaces.IKLineChartAdapter;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Created by weiyang on 2019-11-04.
  */
-public class KLineChartAdapter extends ChartAdapter implements IBarLineSetProvider {
-    private List<ICandle> mCandleData = new ArrayList<>();
-    private List<IBarLineSet> mMainLineSets;
-    private List<IBarLineSet> mChild1LineSets;
-    private List<IBarLineSet> mChild2LineSets;
+public class KLineChartAdapter extends ChartAdapter implements IKLineChartAdapter {
 
-    private int indexMain;
-    private int indexChild1;
-    private int indexChild2;
-
-    public KLineChartAdapter(KLineChartView chart) {
-        chart.setAdapter(this);
-    }
+    private Map<String, IDataLineSet> dataMap = new HashMap<>();
 
     @Override
     public int getCount() {
-        return mCandleData.size();
+        IDataLineSet dataLineSet = dataMap.get("");
+        return dataLineSet == null ? 0 : dataLineSet.getCount();
     }
 
-    public float getLatestPrice() {
-        return getCandle(getCount() - 1).getClose();
+    @Override
+    public void bindToKLineChartView(KLineChartView kLineChartView) {
+        kLineChartView.setAdapter(this);
     }
 
+    @Override
     public ICandle getCandle(int position) {
-        return mCandleData.get(position);
-    }
-
-    public void setData(List<ICandle> candles) {
-        mCandleData.addAll(candles);
-    }
-
-    public void setMainLineSets(List<IBarLineSet> barLineSets) {
-        this.mMainLineSets = barLineSets;
-
-        notifyDataSetChanged();
-    }
-
-    public void setChild1LineSets(List<IBarLineSet> barLineSets) {
-        this.mChild1LineSets = barLineSets;
-
-        notifyDataSetChanged();
-    }
-
-    public void setChild2LineSets(List<IBarLineSet> barLineSets) {
-        this.mChild2LineSets = barLineSets;
-
-        notifyDataSetChanged();
-    }
-
-    public void changeMain(int index) {
-        this.indexMain = index;
-
-        notifyDataSetInvalidated();
-    }
-
-    public void changeChild1(int index) {
-        this.indexChild1 = index;
-
-        notifyDataSetInvalidated();
-    }
-
-    public void changeChild2(int index) {
-        this.indexChild2 = index;
-
-        notifyDataSetInvalidated();
+        IDataLineSet dataLineSet = dataMap.get("");
+        if (dataLineSet == null)
+            throw new IllegalArgumentException("未添加Candle数据");
+        return (ICandle) dataLineSet.getData(position);
     }
 
     @Override
-    public IBarLineSet getMainLineSet() {
-        return indexMain != -1 ? mMainLineSets.get(indexMain) : null;
+    public boolean isIncrease(int position) {
+        ICandle candle = getCandle(position);
+        if (candle == null)
+            throw new IllegalArgumentException("未添加Candle数据");
+        return candle.getClose() - candle.getOpen() >= 0;
     }
 
     @Override
-    public IBarLineSet getChild1LineSet() {
-        return indexChild1 != -1 ? mChild1LineSets.get(indexChild1) : null;
+    public float getLatestPrice() {
+        return getCount() == 0 ? 0 : getCandle(getCount() - 1).getClose();
     }
 
     @Override
-    public IBarLineSet getChild2LineSet() {
-        return indexChild2 != -1 ? mChild2LineSets.get(indexChild2) : null;
+    public void notifyDataSetChanged() {
+        mDataSetObservable.notifyChanged();
+    }
+
+    @Override
+    public void notifyDataSetInvalidated() {
+        mDataSetObservable.notifyInvalidated();
+    }
+
+    @Override
+    public IKLineChartAdapter addDataLineSet(String name, IDataLineSet dataLineSet) {
+        dataMap.put(name, dataLineSet);
+        return this;
+    }
+
+    @Override
+    public IDataLineSet getDataLineSet(String name) {
+        return dataMap.get(name);
     }
 
 }

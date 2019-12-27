@@ -9,11 +9,11 @@ import android.graphics.Shader;
 import android.support.annotation.IntDef;
 import android.support.annotation.NonNull;
 
-import com.github.wyang.klinechartlib.huobi.interfaces.IBarLineSet;
-import com.github.wyang.klinechartlib.huobi.data.ICandle;
+import com.github.wyang.klinechartlib.data.ICandle;
 import com.github.wyang.klinechartlib.huobi.KLineChartAdapter;
 import com.github.wyang.klinechartlib.huobi.KLineChartView;
 import com.github.wyang.klinechartlib.huobi.helper.LinePathHelper;
+import com.github.wyang.klinechartlib.huobi.interfaces.IDataLineSet;
 import com.github.wyang.klinechartlib.utils.PointFPool;
 
 import java.lang.annotation.Retention;
@@ -36,10 +36,6 @@ public class MainDraw extends ChartDraw {
     @Mode
     private int mode = Mode.LINE;
 
-
-    private Path linePath = new Path();
-
-
     /**
      * 当前可见最高价
      */
@@ -57,15 +53,10 @@ public class MainDraw extends ChartDraw {
 
     @Override
     public void draw(@NonNull Canvas canvas) {
-        linePath.reset();
-
-        PointF lineP1 = PointFPool.get(0, 0);
-        PointF lineP2 = PointFPool.get(0, 0);
-
         KLineChartAdapter mAdapter = mChart.getAdapter();
-        IBarLineSet barLineSet = mAdapter.getMainLineSet();
+        IDataLineSet dataLineSet = mAdapter.getDataLineSet(name);
 
-        mHelper.save(this, barLineSet);
+        mHelper.save(this, dataLineSet);
 
         int startIndex = mChart.getStartIndex();
         int endIndex = mChart.getEndIndex();
@@ -73,37 +64,9 @@ public class MainDraw extends ChartDraw {
         for (int i = startIndex; i <= endIndex; i++) {
             ICandle data = mAdapter.getCandle(i);
 
-            float x = getAxisX(i);
-            if (isLine()) {
-                if (i == startIndex) {
-                    linePath.moveTo(x, getAxisY(data.getClose()));
-                    //更新下一个点的控制点1
-                    lineP1.x = x + (x - x) * SMOOTHNESS;
-                    lineP1.y = getAxisY(data.getClose());
-                } else if (i == endIndex) {
-                    //更新当前控制点2
-                    lineP2.x = x - (x - getAxisX(i - 1)) * SMOOTHNESS;
-                    lineP2.y = getAxisY(data.getClose());
+            if (isCandle()) {
+                float x = getAxisX(i);
 
-                    linePath.cubicTo(lineP1.x, lineP1.y, lineP2.x, lineP2.y, x, getAxisY(data.getClose()));
-                } else {
-                    ICandle last, next;
-                    last = mAdapter.getCandle(i - 1);
-                    next = mAdapter.getCandle(i + 1);
-                    float k = (getAxisY(next.getClose()) - getAxisY(last.getClose())) / (getAxisX(i + 1) - getAxisX(i - 1));
-                    float b = getAxisY(data.getClose()) - k * getAxisX(i);
-
-                    //更新当前控制点2
-                    lineP2.x = x - (x - getAxisX(i - 1)) * SMOOTHNESS;
-                    lineP2.y = k * lineP2.x + b;
-
-                    linePath.cubicTo(lineP1.x, lineP1.y, lineP2.x, lineP2.y, x, getAxisY(data.getClose()));
-
-                    //更新下一个点的控制点1
-                    lineP1.x = x + (getAxisX(i + 1) - x) * SMOOTHNESS;
-                    lineP1.y = k * lineP1.x + b;
-                }
-            } else {
                 float high = getAxisY(data.getHigh());
                 float low = getAxisY(data.getLow());
                 float open = getAxisY(data.getOpen());
@@ -121,16 +84,13 @@ public class MainDraw extends ChartDraw {
                     mChart.drawCandle(canvas, x, close - 1, close, true);
                     mChart.drawCandleLine(canvas, x, high, low);
                 }
-
-                mHelper.move(i);
             }
+            mHelper.move(i);
         }
-
-        PointFPool.recycle(lineP1);
-        PointFPool.recycle(lineP2);
 
         //先画线#5776AD
         if (isLine()) {
+            Path linePath = mHelper.getLinePath();
             mChart.drawLinePath(canvas, linePath, 0xFF5776AD);
             LinearGradient shader = new LinearGradient(0, 0, 0, getMinAxisY(), 0x335776AD, 0x005776AD, Shader.TileMode.CLAMP);
 
@@ -141,28 +101,33 @@ public class MainDraw extends ChartDraw {
         } else {
             List<Path> paths = mHelper.getPaths();
             for (int i = 0; i < paths.size(); i++) {
-                mChart.drawLinePath(canvas, paths.get(i), barLineSet.getLineColor(i));
+                mChart.drawLinePath(canvas, paths.get(i), dataLineSet.getLineColor(i));
             }
-            mHelper.restore();
 
-            if (barLineSet != null) {
+            if (dataLineSet != null) {
                 int selectedIndex = mChart.getSelectedIndex();
                 String text;
-                PointF p = PointFPool.get(0, 0);
-                for (int i = 0; i < barLineSet.getLineSize(); i++) {
-                    Float rst = barLineSet.getLine(i).get(selectedIndex == -1 ? mAdapter.getCount() - 1 : selectedIndex);
+                PointF p = PointFPool.get(mChart.getAxisTextPadding(), mChart.getAxisTextPadding());
+                for (int i = 0; i < dataLineSet.getLineSize(); i++) {
+                    Float rst = dataLineSet.getLinePoint(i, selectedIndex == -1 ? mAdapter.getCount() - 1 : selectedIndex);
                     if (rst == null)
                         continue;
 
-                    text = barLineSet.getLabel(i) + mChart.getPriceFormatter().format(rst);
-                    mChart.drawText(canvas, text, p, barLineSet.getLineColor(i));
+                    text = dataLineSet.getLabel(i) + mChart.getPriceFormatter().format(rst);
+                    float x = p.x + mChart.getTextPaint().measureText(text + "    ");
+                    if (x > mChart.getWidth() - mChart.getAxisTextPadding()) {
+                        p.x = mChart.getAxisTextPadding();
+                        p.y += mChart.getDefaultTextHeight();
+                    }
+                    mChart.drawText(canvas, text, p, dataLineSet.getLineColor(i));
+                    if (p.x < mChart.getWidth() - mChart.getAxisTextPadding())
+                        p.x += mChart.getTextPaint().measureText(text + "    ");
 
-                    p.x += mChart.getTextPaint().measureText(text + "    ");
-                    p.y = 0;
                 }
                 PointFPool.recycle(p);
             }
         }
+        mHelper.restore();
 
         //绘制最大最小值
         if (!isLine()) {
@@ -204,27 +169,28 @@ public class MainDraw extends ChartDraw {
     }
 
     @Override
-    public void calcMinMax(int index) {
-        ICandle data = mChart.getAdapter().getCandle(index);
+    public void calcMinMax(int position, boolean isReset) {
+        if (isReset) {
+            maxValue = maxPrice = Float.MIN_VALUE;
+            minValue = minPrice = Float.MAX_VALUE;
+        }
+        ICandle data = mChart.getAdapter().getCandle(position);
         if (isLine()) {
             maxValue = Math.max(data.getClose(), maxValue);
             minValue = Math.min(data.getClose(), minValue);
         } else {
-            maxValue = Math.max(data.getHigh(), maxValue);
-            minValue = Math.min(data.getLow(), minValue);
-
-            IBarLineSet barLineSet = mChart.getAdapter().getMainLineSet();
-            if (barLineSet != null) {
-                maxValue = Math.max(barLineSet.getMax(index), maxValue);
-                minValue = Math.min(barLineSet.getMin(index), minValue);
+            IDataLineSet dataLineSet = mChart.getAdapter().getDataLineSet(name);
+            if (dataLineSet != null) {
+                maxValue = Math.max(dataLineSet.getMax(position), maxValue);
+                minValue = Math.min(dataLineSet.getMin(position), minValue);
             }
 
             maxPrice = Math.max(data.getHigh(), maxPrice);
             minPrice = Math.min(data.getLow(), minPrice);
             if (maxPrice == data.getHigh())
-                mMaxValueIndex = index;
+                mMaxValueIndex = position;
             if (minPrice == data.getLow())
-                mMinValueIndex = index;
+                mMinValueIndex = position;
         }
 
         float latestPrice = mChart.getAdapter().getLatestPrice();
@@ -234,27 +200,10 @@ public class MainDraw extends ChartDraw {
     }
 
     @Override
-    public void resetMaxMinValue() {
-        super.resetMaxMinValue();
-        maxPrice = Float.MIN_VALUE;
-        minPrice = Float.MAX_VALUE;
-    }
-
-    public void fixMaxMin() {
-        float textHeight = mChart.getTextDrawHelper().getTextHeight(mChart.getHighLightPaint());
-
-        float minimum = (maxValue - minValue) / (getMinAxisY() - getMaxAxisY() - textHeight);
-        maxValue += minimum * textHeight / 2;
-        minValue -= minimum * textHeight / 2;
-
-        if (maxValue == minValue) {
-            //当最大值和最小值都相等的时候 分别增大最大值和 减小最小值
-            maxValue += Math.abs(maxValue * 0.05f);
-            minValue -= Math.abs(minValue * 0.05f);
-            if (maxValue == 0) {
-                maxValue = 1;
-            }
-        }
+    public void fixMaxMin(float diff) {
+        float minimum = (maxValue - minValue) / (getMinAxisY() - getMaxAxisY() - diff);
+        maxValue += minimum * diff / 2;
+        minValue -= minimum * diff / 2;
     }
 
     public void setMode(@Mode int mode) {
@@ -263,5 +212,9 @@ public class MainDraw extends ChartDraw {
 
     public boolean isLine() {
         return mode == Mode.LINE;
+    }
+
+    public boolean isCandle() {
+        return mode == Mode.CANDLE;
     }
 }

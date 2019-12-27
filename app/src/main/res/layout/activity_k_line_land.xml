@@ -217,7 +217,7 @@
             android:id="@+id/rg_sub"
             android:layout_width="match_parent"
             android:layout_height="0dp"
-            android:layout_weight="4">
+            android:layout_weight="5">
 
             <RadioButton
                 android:id="@+id/rb_macd"
@@ -257,6 +257,16 @@
                 android:button="@null"
                 android:gravity="center"
                 android:text="WR"
+                android:textColor="@drawable/selector_tab_text" />
+
+            <RadioButton
+                android:id="@+id/rb_boll_child"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:button="@null"
+                android:gravity="center"
+                android:text="BOLL"
                 android:textColor="@drawable/selector_tab_text" />
         </RadioGroup>
 

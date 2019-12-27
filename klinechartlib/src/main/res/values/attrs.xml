@@ -1,13 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <declare-styleable name="KLineChartView">
+    <declare-styleable name="KLineChartView">、
+        <attr name="kc_grid_line_width" format="dimension" />
+        <attr name="kc_grid_line_color" format="color" />
         <attr name="kc_point_width" format="dimension" />
         <attr name="kc_candle_width" format="dimension" />
         <attr name="kc_candle_line_width" format="dimension" />
-        <attr name="kc_grid_line_width" format="dimension" />
-        <attr name="kc_grid_line_color" format="color" />
+        <attr name="kc_increase_color" format="color" />
+        <attr name="kc_decrease_color" format="color" />
+        <attr name="kc_candle_color" format="color" /><!--主图Candle使用涨跌色，子图Candle使用这个值-->
+
         <attr name="kc_icon" format="reference" />
         <attr name="kc_line_width" format="dimension" />
+
+        <attr name="kc_baseline_width" format="dimension" />
+        <attr name="kc_baseline_color_default" format="color" />
+        <attr name="kc_baseline_color_highlight" format="color" />
+
         <attr name="kc_text_color" format="color" />
         <attr name="kc_text_size" format="dimension" />
         <attr name="kc_highlight_color" format="color" />

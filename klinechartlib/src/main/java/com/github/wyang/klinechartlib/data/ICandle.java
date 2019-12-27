@@ -1,8 +1,8 @@
-package com.github.wyang.klinechartlib.huobi.data;
+package com.github.wyang.klinechartlib.data;
 
 /**
  * Created by weiyang on 2019-11-11.
- * 蜡烛图实体类
+ * 蜡烛图对应图形：上影线 + 矩形 + 下影线
  */
 public interface ICandle {
 
@@ -14,11 +14,5 @@ public interface ICandle {
 
     float getClose();//收盘价
 
-    float getVolume();//成交量
-
-    float getTotal();//成交额
-
     long getTime();//时间
-
-    boolean isRise();
 }

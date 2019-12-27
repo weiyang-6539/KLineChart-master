@@ -20,33 +20,40 @@ public abstract class ChartDraw implements IChartDraw {
      * 表格一部分在View所占矩形区域
      */
     private RectF mBounds = new RectF();
-    /**
-     * 绘制曲线的平滑度
-     */
-    protected float SMOOTHNESS = 0.2f;
 
-    protected float mTopSpacing;
+    private float mTopSpacing;
 
     /**
      * 矩形最上方y轴对应值（最大）
      */
-    protected float maxValue;
+    float maxValue;
     /**
      * 矩形最下方y轴对应值（最小）
      */
-    protected float minValue;
+    float minValue;
+    /**
+     * 指标名称
+     */
+    protected String name = "";
 
-    protected KLineChartView mChart;
-    protected LinePathHelper mHelper;
+    KLineChartView mChart;
+    LinePathHelper mHelper;
 
-    public ChartDraw(KLineChartView chart, LinePathHelper helper) {
+    ChartDraw(KLineChartView chart, LinePathHelper helper) {
         this.mChart = chart;
         this.mHelper = helper;
     }
 
     public abstract void draw(@NonNull Canvas canvas);
 
-    public abstract void calcMinMax(int index);
+    public abstract void calcMinMax(int position, boolean isReset);
+
+    public abstract void fixMaxMin(float diff);
+
+    @Override
+    public void setName(String name) {
+        this.name = name;
+    }
 
     public void setBounds(float left, float top, float right, float bottom) {
         mBounds.set(left, top, right, bottom);
@@ -77,8 +84,8 @@ public abstract class ChartDraw implements IChartDraw {
     }
 
     @Override
-    public float getAxisX(int index) {
-        return mChart.getDrawX(index);
+    public float getAxisX(int position) {
+        return mChart.getDrawX(position);
     }
 
     @Override
@@ -101,10 +108,5 @@ public abstract class ChartDraw implements IChartDraw {
     @Override
     public float getBottom() {
         return mBounds.bottom;
-    }
-
-    public void resetMaxMinValue() {
-        maxValue = Float.MIN_VALUE;
-        minValue = Float.MAX_VALUE;
     }
 }

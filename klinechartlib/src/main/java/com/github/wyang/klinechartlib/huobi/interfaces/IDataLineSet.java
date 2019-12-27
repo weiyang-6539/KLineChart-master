@@ -1,21 +1,23 @@
 package com.github.wyang.klinechartlib.huobi.interfaces;
 
-import java.util.List;
-
 /**
  * Created by fxb on 2019-11-18.
  */
-public interface IBarLineSet {
+public interface IDataLineSet {
 
     String getName();
 
-    boolean showName();
+    boolean isShowName();
 
-    String getBarLabel();
+    String getDataLabel();
 
-    void addData(Float data);
+    int getCount();
 
-    List<Float> getData();
+    void addData(IData o);
+
+    <T extends IData> T getData(int position);
+
+    int getDataCount();
 
     void addLine(int color, String label);
 
@@ -23,11 +25,15 @@ public interface IBarLineSet {
 
     String getLabel(int index);
 
-    List<Float> getLine(int index);
+    void addLinePoint(Float... floats);
+
+    Float getLinePoint(int index, int position);
 
     int getLineSize();
 
     float getMax(int index);
 
     float getMin(int index);
+
+    void clear();
 }

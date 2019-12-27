@@ -3,7 +3,8 @@ package com.github.wyang.klinechartlib.huobi.data;
 import android.util.SparseArray;
 import android.util.SparseIntArray;
 
-import com.github.wyang.klinechartlib.huobi.interfaces.IBarLineSet;
+import com.github.wyang.klinechartlib.huobi.interfaces.IData;
+import com.github.wyang.klinechartlib.huobi.interfaces.IDataLineSet;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -11,7 +12,7 @@ import java.util.List;
 /**
  * Created by fxb on 2019-11-18.
  */
-public class BarLineSet implements IBarLineSet {
+public class DataLineSet implements IDataLineSet {
     /**
      * 指标名称（ma,rsi,sar,macd,boll...）
      */
@@ -21,13 +22,13 @@ public class BarLineSet implements IBarLineSet {
      */
     private boolean isShowName;
     /**
-     * bar数据对应标签
+     * data数据对应标签
      */
-    private String barLabel;
+    private String dataLabel;
     /**
      * 用于绘制矩形的值
      */
-    private List<Float> barData = new ArrayList<>();
+    private List<IData> data = new ArrayList<>();
     /**
      * 线的颜色
      */
@@ -41,15 +42,19 @@ public class BarLineSet implements IBarLineSet {
      */
     private SparseArray<List<Float>> lines = new SparseArray<>();
 
-    public BarLineSet(String name, String barLabel) {
-        this.name = name;
-        this.barLabel = barLabel;
+    public DataLineSet() {
     }
 
-    public BarLineSet(String name, boolean isShowName, String barLabel) {
+    public void setName(String name) {
         this.name = name;
-        this.isShowName = isShowName;
-        this.barLabel = barLabel;
+    }
+
+    public void setShowName(boolean showName) {
+        isShowName = showName;
+    }
+
+    public void setDataLabel(String dataLabel) {
+        this.dataLabel = dataLabel;
     }
 
     @Override
@@ -58,23 +63,37 @@ public class BarLineSet implements IBarLineSet {
     }
 
     @Override
-    public boolean showName() {
+    public boolean isShowName() {
         return isShowName;
     }
 
     @Override
-    public String getBarLabel() {
-        return barLabel;
+    public String getDataLabel() {
+        return dataLabel;
     }
 
     @Override
-    public void addData(Float data) {
-        barData.add(data);
+    public int getCount() {
+        if (!data.isEmpty())
+            return getDataCount();
+        if (lines.size() != 0)
+            return lines.get(0).size();
+        return 0;
     }
 
     @Override
-    public List<Float> getData() {
-        return barData;
+    public void addData(IData o) {
+        data.add(o);
+    }
+
+    @Override
+    public <T extends IData> T getData(int position) {
+        return (T) data.get(position);
+    }
+
+    @Override
+    public int getDataCount() {
+        return data.size();
     }
 
     @Override
@@ -96,8 +115,19 @@ public class BarLineSet implements IBarLineSet {
     }
 
     @Override
-    public List<Float> getLine(int index) {
-        return lines.get(index);
+    public void addLinePoint(Float... floats) {
+        if (floats.length != lines.size()) {
+            throw new IllegalArgumentException("更新线的元素点时，点与线的数量必须相等");
+        }
+
+        for (int i = 0; i < floats.length; i++) {
+            lines.get(i).add(floats[i]);
+        }
+    }
+
+    @Override
+    public Float getLinePoint(int index, int position) {
+        return lines.get(index).get(position);
     }
 
     @Override
@@ -109,21 +139,29 @@ public class BarLineSet implements IBarLineSet {
     public float getMax(int index) {
         float rst = Float.MIN_VALUE;
         for (int i = 0; i < getLineSize(); i++) {
-            Float f = getLine(i).get(index);
+            Float f = getLinePoint(i, index);
             if (f != null)
                 rst = Math.max(rst, f);
         }
-        return rst;
+        return data.isEmpty() ? rst : Math.max(rst, data.get(index).getMax());
     }
 
     @Override
     public float getMin(int index) {
         float rst = Float.MAX_VALUE;
         for (int i = 0; i < getLineSize(); i++) {
-            Float f = getLine(i).get(index);
+            Float f = getLinePoint(i, index);
             if (f != null)
                 rst = Math.min(rst, f);
         }
-        return rst;
+        return data.isEmpty() ? rst : Math.min(rst, data.get(index).getMin());
+    }
+
+    @Override
+    public void clear() {
+        data.clear();
+        colors.clear();
+        labels.clear();
+        lines.clear();
     }
 }

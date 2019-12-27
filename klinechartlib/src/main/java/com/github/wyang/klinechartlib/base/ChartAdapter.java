@@ -10,7 +10,7 @@ import com.github.wyang.klinechartlib.huobi.KLineChartView;
  * Created by weiyang on 2019-11-04.
  */
 public abstract class ChartAdapter {
-    private final DataSetObservable mDataSetObservable = new DataSetObservable();
+    protected final DataSetObservable mDataSetObservable = new DataSetObservable();
 
     /**
      * 获取点的数目
@@ -24,7 +24,7 @@ public abstract class ChartAdapter {
      *
      * @param observer 数据观察者
      */
-    public void registerDataSetObserver(DataSetObserver observer) {
+    void registerDataSetObserver(DataSetObserver observer) {
         mDataSetObservable.registerObserver(observer);
     }
 
@@ -33,16 +33,7 @@ public abstract class ChartAdapter {
      *
      * @param observer 数据观察者
      */
-    public void unregisterDataSetObserver(DataSetObserver observer) {
+    void unregisterDataSetObserver(DataSetObserver observer) {
         mDataSetObservable.unregisterObserver(observer);
     }
-
-    public void notifyDataSetChanged() {
-        mDataSetObservable.notifyChanged();
-    }
-
-    public void notifyDataSetInvalidated() {
-        mDataSetObservable.notifyInvalidated();
-    }
-
 }

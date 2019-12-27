@@ -6,6 +6,11 @@ package com.github.wyang.klinechartlib.huobi.draw;
 public interface IChartDraw {
 
     /**
+     * 设置当前指标名称，名称用于从适配器中取对应DataLineSet
+     */
+    void setName(String name);
+
+    /**
      * 实际最大值
      */
     float getMaxValue();
@@ -28,7 +33,7 @@ public interface IChartDraw {
     /**
      * 计算当前索引在矩形区域内的X坐标值
      */
-    float getAxisX(int index);
+    float getAxisX(int position);
 
     /**
      * 计算某一值在矩形区域内的Y坐标值
