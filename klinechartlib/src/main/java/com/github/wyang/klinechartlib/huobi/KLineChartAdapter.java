@@ -2,23 +2,25 @@ package com.github.wyang.klinechartlib.huobi;
 
 import com.github.wyang.klinechartlib.base.ChartAdapter;
 import com.github.wyang.klinechartlib.data.ICandle;
+import com.github.wyang.klinechartlib.huobi.data.DataLineSetProvider;
+import com.github.wyang.klinechartlib.huobi.data.KLineEntity;
 import com.github.wyang.klinechartlib.huobi.interfaces.IDataLineSet;
+import com.github.wyang.klinechartlib.huobi.interfaces.IDataLineSetProvider;
 import com.github.wyang.klinechartlib.huobi.interfaces.IKLineChartAdapter;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by weiyang on 2019-11-04.
  */
 public class KLineChartAdapter extends ChartAdapter implements IKLineChartAdapter {
-
-    private Map<String, IDataLineSet> dataMap = new HashMap<>();
+    private List<KLineEntity> mData = new ArrayList<>();
+    private IDataLineSetProvider provider;
 
     @Override
     public int getCount() {
-        IDataLineSet dataLineSet = dataMap.get("");
-        return dataLineSet == null ? 0 : dataLineSet.getCount();
+        return mData.size();
     }
 
     @Override
@@ -27,18 +29,40 @@ public class KLineChartAdapter extends ChartAdapter implements IKLineChartAdapte
     }
 
     @Override
+    public void bindToDataLineSetProvider(DataLineSetProvider provider) {
+        this.provider = provider;
+    }
+
+    @Override
+    public void setNewData(List<KLineEntity> list) {
+        mData.addAll(list);
+
+        provider.calculate(mData, mData.size() - 1);
+
+        notifyDataSetChanged();
+    }
+
+    @Override
+    public void addData(List<KLineEntity> list) {
+        mData.addAll(0, list);
+
+        int end = list.size() - 1 + provider.getMaxN();
+        if (end > mData.size() - 1)
+            provider.calculate(mData, mData.size() - 1);
+        else
+            provider.calculate(mData, end);
+
+        notifyDataSetChanged();
+    }
+
+    @Override
     public ICandle getCandle(int position) {
-        IDataLineSet dataLineSet = dataMap.get("");
-        if (dataLineSet == null)
-            throw new IllegalArgumentException("未添加Candle数据");
-        return (ICandle) dataLineSet.getData(position);
+        return mData.get(position).getCandle();
     }
 
     @Override
     public boolean isIncrease(int position) {
         ICandle candle = getCandle(position);
-        if (candle == null)
-            throw new IllegalArgumentException("未添加Candle数据");
         return candle.getClose() - candle.getOpen() >= 0;
     }
 
@@ -58,14 +82,8 @@ public class KLineChartAdapter extends ChartAdapter implements IKLineChartAdapte
     }
 
     @Override
-    public IKLineChartAdapter addDataLineSet(String name, IDataLineSet dataLineSet) {
-        dataMap.put(name, dataLineSet);
-        return this;
-    }
-
-    @Override
     public IDataLineSet getDataLineSet(String name) {
-        return dataMap.get(name);
+        return provider.get(name.toLowerCase());
     }
 
 }

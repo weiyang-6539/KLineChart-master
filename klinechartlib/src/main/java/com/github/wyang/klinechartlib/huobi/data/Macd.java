@@ -1,4 +1,4 @@
-package com.github.wyang.klinechartdemo.bean;
+package com.github.wyang.klinechartlib.huobi.data;
 
 import com.github.wyang.klinechartlib.data.IMacd;
 import com.github.wyang.klinechartlib.huobi.interfaces.IData;
@@ -8,6 +8,10 @@ import com.github.wyang.klinechartlib.huobi.interfaces.IData;
  */
 public class Macd implements IMacd, IData {
     public float macd;
+
+    public Macd(float macd) {
+        this.macd = macd;
+    }
 
     @Override
     public float getMacd() {

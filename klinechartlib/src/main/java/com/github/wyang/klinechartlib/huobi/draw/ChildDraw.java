@@ -4,6 +4,7 @@ import android.graphics.Canvas;
 import android.graphics.Path;
 import android.graphics.PointF;
 import android.support.annotation.NonNull;
+import android.text.TextUtils;
 
 import com.github.wyang.klinechartlib.R;
 import com.github.wyang.klinechartlib.data.ICandle;
@@ -90,7 +91,7 @@ public class ChildDraw extends ChartDraw {
         }
 
         //绘制各项指标值
-        if (dataLineSet.getDataCount() != 0) {
+        if (dataLineSet.getDataCount() != 0 && !TextUtils.isEmpty(dataLineSet.getDataLabel())) {
             IData data = dataLineSet.getData(selectedIndex == -1 ? dataLineSet.getDataCount() - 1 : selectedIndex);
 
             text = dataLineSet.getDataLabel() + mChart.getPriceFormatter().format(data.getMax());

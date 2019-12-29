@@ -15,6 +15,8 @@ import android.graphics.Shader;
 import android.support.annotation.ColorInt;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
+import android.view.View;
+import android.widget.ProgressBar;
 
 import com.github.wyang.klinechartlib.R;
 import com.github.wyang.klinechartlib.base.BaseChartView;
@@ -126,6 +128,12 @@ public class KLineChartView extends BaseChartView<KLineChartAdapter> {
 
     private RadialGradient circleGradient;
 
+    private ProgressBar mProgressBar;
+    private boolean isRefreshing;
+    private boolean isLoadMoreEnd;
+
+    private OnRefreshListener onRefreshListener;
+
     public KLineChartView(Context context) {
         this(context, null);
     }
@@ -138,6 +146,12 @@ public class KLineChartView extends BaseChartView<KLineChartAdapter> {
         super(context, attrs, defStyleAttr);
 
         initAttrs(context, attrs);
+
+        mProgressBar = new ProgressBar(getContext());
+        LayoutParams layoutParams = new LayoutParams((int) dp2px(50), (int) dp2px(50));
+        layoutParams.addRule(CENTER_IN_PARENT);
+        addView(mProgressBar, layoutParams);
+        mProgressBar.setVisibility(GONE);
 
         axisTextPadding = (int) dp2px(5);
 
@@ -255,6 +269,76 @@ public class KLineChartView extends BaseChartView<KLineChartAdapter> {
     protected void onScaleChanged(float oldScale) {
         mCandleWidth = mPointWidth * mScaleX - mCandleLineWidth;
         mSelectedYLinePaint.setStrokeWidth(mPointWidth * mScaleX);
+    }
+
+    @Override
+    public void onLeftSide() {
+        loadMore();
+    }
+
+    public void autoRefresh() {
+        if (!isRefreshing) {
+            isRefreshing = true;
+            if (mProgressBar != null) {
+                mProgressBar.setVisibility(View.VISIBLE);
+            }
+            if (onRefreshListener != null) {
+                onRefreshListener.onRefresh();
+            }
+            mAdapter.notifyDataSetInvalidated();
+        }
+    }
+
+    private void loadMore() {
+        if (!isLoadMoreEnd && !isRefreshing) {
+            isRefreshing = true;
+            if (mProgressBar != null) {
+                mProgressBar.setVisibility(View.VISIBLE);
+            }
+            if (onRefreshListener != null) {
+                onRefreshListener.onLoadMore();
+            }
+            mAdapter.notifyDataSetInvalidated();
+        }
+    }
+
+
+    /**
+     * 刷新完成
+     */
+    public void refreshComplete() {
+        isRefreshing = false;
+        mAdapter.notifyDataSetInvalidated();
+    }
+
+    /**
+     * 刷新完成，没有数据
+     */
+    public void refreshEnd() {
+        isLoadMoreEnd = true;
+        isRefreshing = false;
+        mAdapter.notifyDataSetInvalidated();
+    }
+
+    /**
+     * 重置加载更多
+     */
+    public void resetLoadMoreEnd() {
+        isLoadMoreEnd = false;
+    }
+
+    @Override
+    public boolean isScaleEnable() {
+        if (isRefreshing)
+            return false;
+        return super.isScaleEnable();
+    }
+
+    @Override
+    public boolean isScrollEnable() {
+        if (isRefreshing)
+            return false;
+        return super.isScrollEnable();
     }
 
     @Override
@@ -916,5 +1000,15 @@ public class KLineChartView extends BaseChartView<KLineChartAdapter> {
 
     public void setDateFormatter(IDateFormatter mDateFormatter) {
         this.mDateFormatter = mDateFormatter;
+    }
+
+    public void setOnRefreshListener(OnRefreshListener onRefreshListener) {
+        this.onRefreshListener = onRefreshListener;
+    }
+
+    public interface OnRefreshListener {
+        void onRefresh();
+
+        void onLoadMore();
     }
 }

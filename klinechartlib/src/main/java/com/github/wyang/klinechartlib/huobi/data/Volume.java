@@ -1,4 +1,4 @@
-package com.github.wyang.klinechartdemo.bean;
+package com.github.wyang.klinechartlib.huobi.data;
 
 import com.github.wyang.klinechartlib.data.IVolume;
 import com.github.wyang.klinechartlib.huobi.interfaces.IData;
@@ -8,6 +8,10 @@ import com.github.wyang.klinechartlib.huobi.interfaces.IData;
  */
 public class Volume implements IVolume, IData {
     public float volume;
+
+    public Volume(float volume) {
+        this.volume = volume;
+    }
 
     @Override
     public float getVolume() {

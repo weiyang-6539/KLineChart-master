@@ -1,4 +1,4 @@
-package com.github.wyang.klinechartdemo.bean;
+package com.github.wyang.klinechartlib.huobi.data;
 
 import com.github.wyang.klinechartlib.data.ICandle;
 import com.github.wyang.klinechartlib.huobi.interfaces.IData;
@@ -12,6 +12,14 @@ public class Candle implements ICandle, IData {
     public float low;
     public float close;
     public long time;
+
+    public Candle(float open, float high, float low, float close, long time) {
+        this.open = open;
+        this.high = high;
+        this.low = low;
+        this.close = close;
+        this.time = time;
+    }
 
     @Override
     public float getOpen() {
