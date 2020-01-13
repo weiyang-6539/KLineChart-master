@@ -13,14 +13,6 @@ public class Candle implements ICandle, IData {
     public float close;
     public long time;
 
-    public Candle(float open, float high, float low, float close, long time) {
-        this.open = open;
-        this.high = high;
-        this.low = low;
-        this.close = close;
-        this.time = time;
-    }
-
     @Override
     public float getOpen() {
         return open;

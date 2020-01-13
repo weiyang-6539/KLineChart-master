@@ -16,10 +16,15 @@
         <attr name="kc_baseline_width" format="dimension" />
         <attr name="kc_baseline_color_default" format="color" />
         <attr name="kc_baseline_color_highlight" format="color" />
+        <attr name="kc_frame_background" format="color" />
+        <attr name="kc_selector_color" format="color" />
 
         <attr name="kc_text_color" format="color" />
         <attr name="kc_text_size" format="dimension" />
         <attr name="kc_highlight_color" format="color" />
         <attr name="kc_highlight_size" format="dimension" />
+
+        <attr name="kc_radius_beat" format="dimension" />
+        <attr name="kc_radius_selector" format="dimension" />
     </declare-styleable>
 </resources>

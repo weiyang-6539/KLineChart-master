@@ -189,7 +189,9 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:background="#151E2F"
-                app:kc_icon="@drawable/kline_water_logo" />
+                app:kc_icon="@drawable/kline_water_logo">
+
+            </com.github.wyang.klinechartlib.huobi.KLineChartView>
 
             <View
                 android:layout_width="match_parent"

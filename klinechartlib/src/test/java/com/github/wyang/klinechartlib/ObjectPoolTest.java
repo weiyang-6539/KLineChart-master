@@ -5,6 +5,7 @@ import com.github.wyang.klinechartlib.utils.IntegerPool;
 import org.junit.Test;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 /**

@@ -9,10 +9,6 @@ import com.github.wyang.klinechartlib.huobi.interfaces.IData;
 public class Volume implements IVolume, IData {
     public float volume;
 
-    public Volume(float volume) {
-        this.volume = volume;
-    }
-
     @Override
     public float getVolume() {
         return volume;

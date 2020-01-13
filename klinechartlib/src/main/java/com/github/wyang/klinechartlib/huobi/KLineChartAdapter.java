@@ -1,7 +1,6 @@
 package com.github.wyang.klinechartlib.huobi;
 
 import com.github.wyang.klinechartlib.base.ChartAdapter;
-import com.github.wyang.klinechartlib.data.ICandle;
 import com.github.wyang.klinechartlib.huobi.data.DataLineSetProvider;
 import com.github.wyang.klinechartlib.huobi.data.KLineEntity;
 import com.github.wyang.klinechartlib.huobi.interfaces.IDataLineSet;
@@ -37,7 +36,7 @@ public class KLineChartAdapter extends ChartAdapter implements IKLineChartAdapte
     public void setNewData(List<KLineEntity> list) {
         mData.addAll(list);
 
-        provider.calculate(mData, mData.size() - 1);
+        provider.calculateAll(mData);
 
         notifyDataSetChanged();
     }
@@ -46,29 +45,37 @@ public class KLineChartAdapter extends ChartAdapter implements IKLineChartAdapte
     public void addData(List<KLineEntity> list) {
         mData.addAll(0, list);
 
-        int end = list.size() - 1 + provider.getMaxN();
-        if (end > mData.size() - 1)
-            provider.calculate(mData, mData.size() - 1);
-        else
-            provider.calculate(mData, end);
+        provider.calculateAll(mData);
 
         notifyDataSetChanged();
     }
 
     @Override
-    public ICandle getCandle(int position) {
-        return mData.get(position).getCandle();
+    public void addData(KLineEntity data, boolean replace) {
+        if (replace)
+            mData.set(mData.size() - 1, data);
+        else
+            mData.add(data);
+
+        provider.calculateLast(mData, replace);
+
+        notifyDataSetChanged();
+    }
+
+    @Override
+    public KLineEntity getData(int position) {
+        return mData.get(position);
     }
 
     @Override
     public boolean isIncrease(int position) {
-        ICandle candle = getCandle(position);
-        return candle.getClose() - candle.getOpen() >= 0;
+        KLineEntity data = getData(position);
+        return data.close - data.open >= 0;
     }
 
     @Override
     public float getLatestPrice() {
-        return getCount() == 0 ? 0 : getCandle(getCount() - 1).getClose();
+        return getCount() == 0 ? 0 : getData(getCount() - 1).close;
     }
 
     @Override

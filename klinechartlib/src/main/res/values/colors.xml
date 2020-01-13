@@ -5,7 +5,8 @@
     <color name="chart_grid_line">#1AFFFFFF</color>
     <color name="chart_text">#738495</color>
     <color name="chart_highlight">#e2e2e2</color>
-    <color name="chart_selector">#202326</color>
+    <color name="chart_frame">#081928</color>
+    <color name="chart_selector">#ffffff</color>
 
     <color name="chart_red">#C75266</color>
     <color name="chart_green">#4BA692</color>

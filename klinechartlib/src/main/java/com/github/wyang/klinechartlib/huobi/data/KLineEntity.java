@@ -17,13 +17,28 @@ public class KLineEntity {
 
     public Candle getCandle() {
         if (candle == null)
-            candle = new Candle(open, high, low, close, time);
+            candle = new Candle();
+
+        candle.open = open;
+        candle.high = high;
+        candle.close = close;
+        candle.low = low;
+        candle.time = time;
         return candle;
     }
 
     public Volume getVolume() {
         if (volume == null)
-            volume = new Volume(vol);
+            volume = new Volume();
+
+        volume.volume = vol;
         return volume;
+    }
+
+    public void update(float newClose) {
+        this.close = newClose;
+
+        high = Math.max(high, close);
+        low = Math.min(low, close);
     }
 }

@@ -1,6 +1,6 @@
 package com.github.wyang.klinechartdemo;
 
-import android.content.Context;
+import android.animation.ValueAnimator;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.os.Bundle;
@@ -11,8 +11,10 @@ import android.support.design.widget.TabLayout;
 import android.support.v4.view.ViewCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.AccelerateDecelerateInterpolator;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -30,6 +32,7 @@ import org.json.JSONArray;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 /**
  * Created by weiyang on 2019-11-01.
@@ -42,6 +45,7 @@ public class KLineChartActivity extends AppCompatActivity {
 
     private int pos;
     private TextView tv_buy, tv_sell;
+    private List<KLineEntity> data;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -127,7 +131,12 @@ public class KLineChartActivity extends AppCompatActivity {
 
             @Override
             public void onLoadMore() {
-                new Handler().postDelayed(() -> mKLineChartView.refreshComplete(), 2000);
+                new Handler().postDelayed(() -> {
+                    List<KLineEntity> kLineData = getKLineData("little2.json");
+                    mAdapter.addData(kLineData);
+
+                    mKLineChartView.refreshComplete();
+                }, 2000);
             }
         });
 
@@ -135,7 +144,49 @@ public class KLineChartActivity extends AppCompatActivity {
         mAdapter.bindToKLineChartView(mKLineChartView);
         mAdapter.bindToDataLineSetProvider(new DataLineSetProvider());
 
-        initKLineData(this);
+        data = getKLineData("little.json");
+        mAdapter.setNewData(data);
+        handler.postDelayed(runnable, 3000);
+
+        mKLineChartView.setMainSelected("ma");
+        mKLineChartView.setChild1Selected("volume");
+        mKLineChartView.setChild2Selected("wr");
+        mKLineChartView.setMode(MainDraw.Mode.LINE);
+    }
+
+    private Handler handler = new Handler();
+
+    private Runnable runnable = this::updateLast;
+
+    private int i = 0;
+
+    private void sendNewData() {
+        if (i == data.size())
+            i = 0;
+        KLineEntity entity = data.get(i++);
+        mAdapter.addData(entity, false);
+
+        handler.postDelayed(runnable, 3000);
+    }
+
+    private void updateLast() {
+        KLineEntity entity = data.get(data.size() - 1);
+        float newClose = (float) (entity.open + (Math.random() * 50 - 25));
+
+        float oldClose = entity.close;
+        float diff = newClose - oldClose;
+        ValueAnimator animator = ValueAnimator.ofFloat(1f);
+        animator.setDuration(500);
+        animator.setInterpolator(new AccelerateDecelerateInterpolator());
+        animator.addUpdateListener(animation -> {
+            float value = (float) animation.getAnimatedValue();
+            entity.update(oldClose + value * diff);
+            mAdapter.addData(entity, true);
+        });
+        animator.start();
+
+        Log.e("KLine", "最新收盘价=" + entity.close);
+        handler.postDelayed(runnable, 3000);
     }
 
     public void onBack(View view) {
@@ -183,12 +234,13 @@ public class KLineChartActivity extends AppCompatActivity {
         popupWindow.showAsDropDown(mTabLayout);
     }
 
-    private void initKLineData(Context context) {
+    private List<KLineEntity> getKLineData(String filename) {
+        List<KLineEntity> list = new ArrayList<>();
+
         try {
-            String json = AssetUtil.readAsset(context, "little.json");
+            String json = AssetUtil.readAsset(this, filename);
             JSONArray jsonArray = new JSONArray(json);
 
-            List<KLineEntity> list = new ArrayList<>();
             for (int i = 0; i < jsonArray.length(); i++) {
                 JSONArray arr = jsonArray.getJSONArray(i);
 
@@ -203,14 +255,9 @@ public class KLineChartActivity extends AppCompatActivity {
                 list.add(entity);
             }
 
-            mAdapter.setNewData(list);
-
-            mKLineChartView.setMainSelected("ma");
-            mKLineChartView.setChild1Selected("volume");
-            mKLineChartView.setChild2Selected("wr");
         } catch (Exception ignored) {
         }
-
+        return list;
     }
 
     public void onLandscape(View view) {

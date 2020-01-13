@@ -11,16 +11,7 @@ public interface IDataLineSetProvider {
 
     IDataLineSet get(String name);
 
-    /**
-     * 计算指标线
-     *
-     * @param data 适配器中数据
-     * @param end  计算结尾position
-     */
-    void calculate(List<KLineEntity> data, int end);
+    void calculateAll(List<KLineEntity> data);
 
-    /**
-     * 指标线最大周期数
-     */
-    int getMaxN();
+    void calculateLast(List<KLineEntity> data, boolean replace);
 }

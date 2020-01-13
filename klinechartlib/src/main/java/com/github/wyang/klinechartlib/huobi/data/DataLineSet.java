@@ -82,8 +82,11 @@ public class DataLineSet implements IDataLineSet {
     }
 
     @Override
-    public void addData(IData o) {
-        data.add(o);
+    public void addData(boolean replace, int position, IData o) {
+        if (replace && position < data.size())
+            data.set(position, o);
+        else
+            data.add(position, o);
     }
 
     @Override
@@ -115,13 +118,17 @@ public class DataLineSet implements IDataLineSet {
     }
 
     @Override
-    public void addLinePoint(Float... floats) {
+    public void addLinePoint(boolean replace, int position, Float... floats) {
         if (floats.length != lines.size()) {
             throw new IllegalArgumentException("更新线的元素点时，点与线的数量必须相等");
         }
 
         for (int i = 0; i < floats.length; i++) {
-            lines.get(i).add(floats[i]);
+            List<Float> list = lines.get(i);
+            if (replace && position < list.size())
+                list.set(position, floats[i]);
+            else
+                list.add(position, floats[i]);
         }
     }
 

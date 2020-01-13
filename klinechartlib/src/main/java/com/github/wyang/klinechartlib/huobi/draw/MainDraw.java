@@ -12,6 +12,7 @@ import android.support.annotation.NonNull;
 import com.github.wyang.klinechartlib.data.ICandle;
 import com.github.wyang.klinechartlib.huobi.KLineChartAdapter;
 import com.github.wyang.klinechartlib.huobi.KLineChartView;
+import com.github.wyang.klinechartlib.huobi.data.KLineEntity;
 import com.github.wyang.klinechartlib.huobi.helper.LinePathHelper;
 import com.github.wyang.klinechartlib.huobi.interfaces.IDataLineSet;
 import com.github.wyang.klinechartlib.utils.PointFPool;
@@ -62,7 +63,7 @@ public class MainDraw extends ChartDraw {
         int endIndex = mChart.getEndIndex();
 
         for (int i = startIndex; i <= endIndex; i++) {
-            ICandle data = mAdapter.getCandle(i);
+            ICandle data = mAdapter.getData(i).getCandle();
 
             if (isCandle()) {
                 float x = getAxisX(i);
@@ -133,34 +134,34 @@ public class MainDraw extends ChartDraw {
         if (!isLine()) {
             Paint mHighLightPaint = mChart.getHighLightPaint();
             //画最小值
-            ICandle candle = mAdapter.getCandle(mMinValueIndex);
+            KLineEntity entity = mAdapter.getData(mMinValueIndex);
             String text;
 
             PointF p = PointFPool.get(0, 0);
             p.x = getAxisX(mMinValueIndex);
-            p.y = getAxisY(candle.getLow());
+            p.y = getAxisY(entity.low);
             if (p.x < mChart.getWidth() / 2) {
-                text = "─ " + mChart.getPriceFormatter().format(candle.getLow());
+                text = "─ " + mChart.getPriceFormatter().format(entity.low);
                 //画右边
                 mChart.getTextDrawHelper().drawPointRight(canvas, text, p, mHighLightPaint);
             } else {
                 //画左边
-                text = mChart.getPriceFormatter().format(candle.getLow()) + " ─";
+                text = mChart.getPriceFormatter().format(entity.low) + " ─";
                 mChart.getTextDrawHelper().drawPointLeft(canvas, text, p, mHighLightPaint);
             }
 
             //画最大值
-            candle = mAdapter.getCandle(mMaxValueIndex);
+            entity = mAdapter.getData(mMaxValueIndex);
             p.x = getAxisX(mMaxValueIndex);
-            p.y = getAxisY(candle.getHigh());
+            p.y = getAxisY(entity.high);
 
             if (p.x < mChart.getWidth() / 2) {
-                text = "─ " + mChart.getPriceFormatter().format(candle.getHigh());
+                text = "─ " + mChart.getPriceFormatter().format(entity.high);
                 //画右边
                 mChart.getTextDrawHelper().drawPointRight(canvas, text, p, mHighLightPaint);
             } else {
                 //画左边
-                text = mChart.getPriceFormatter().format(candle.getHigh()) + " ─";
+                text = mChart.getPriceFormatter().format(entity.high) + " ─";
                 mChart.getTextDrawHelper().drawPointLeft(canvas, text, p, mHighLightPaint);
             }
 
@@ -174,7 +175,7 @@ public class MainDraw extends ChartDraw {
             maxValue = maxPrice = Float.MIN_VALUE;
             minValue = minPrice = Float.MAX_VALUE;
         }
-        ICandle data = mChart.getAdapter().getCandle(position);
+        ICandle data = mChart.getAdapter().getData(position).getCandle();
         if (isLine()) {
             maxValue = Math.max(data.getClose(), maxValue);
             minValue = Math.min(data.getClose(), minValue);

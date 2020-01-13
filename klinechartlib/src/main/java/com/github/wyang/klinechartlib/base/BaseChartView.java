@@ -14,14 +14,14 @@ import android.util.TypedValue;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
+import android.view.ViewGroup;
 import android.widget.OverScroller;
-import android.widget.RelativeLayout;
 
 /**
  * Created by weiyang on 2019-11-01.
  * K线图View基类，处理测量逻辑，滑动缩放逻辑，及数据适配器和长按选中哪一项，具体绘制交由子类
  */
-public abstract class BaseChartView<T extends ChartAdapter> extends RelativeLayout implements
+public abstract class BaseChartView<T extends ChartAdapter> extends ViewGroup implements
         GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener {
     protected final String TAG = getClass().getSimpleName();
     protected GestureDetectorCompat mGestureDetector;
@@ -35,7 +35,7 @@ public abstract class BaseChartView<T extends ChartAdapter> extends RelativeLayo
 
     protected float mOverScrollRange;//图标右方后可滑出距离
 
-    protected float mOffsetX;//第一个数据相对屏幕最左侧的偏移量，与mScrollX相关
+    protected float mOffsetX = Float.MIN_VALUE;//第一个数据相对屏幕最左侧的偏移量，与mScrollX相关
 
     protected float mScaleX = 1;//缩放大小
 
@@ -50,7 +50,7 @@ public abstract class BaseChartView<T extends ChartAdapter> extends RelativeLayo
     private boolean mScrollEnable = true;//是否能够滚动
     private boolean mScaleEnable = true;//是否能够缩放
 
-    protected T mAdapter;
+    private T mAdapter;
     protected float mPointWidth;//当mScaleX=1时，数据占据屏幕的宽
     protected float mDataLength;//数据宽度总和
 
@@ -61,7 +61,7 @@ public abstract class BaseChartView<T extends ChartAdapter> extends RelativeLayo
     private DataSetObserver mDataSetObserver = new DataSetObserver() {
         @Override
         public void onChanged() {
-            notifyChanged();
+            notifyScrollChanged();
         }
 
         @Override
@@ -238,9 +238,7 @@ public abstract class BaseChartView<T extends ChartAdapter> extends RelativeLayo
         } else {
             onScaleChanged(oldScaleX);
         }
-        mOffsetX = (mOffsetX + mWidth * 0.5f) * mScaleX / oldScaleX - mWidth * 0.5f;
-        mDataLength = mAdapter.getCount() * mPointWidth * mScaleX;
-        checkOffsetX();
+        notifyScaleChange(oldScaleX);
 
         return true;
     }
@@ -281,9 +279,12 @@ public abstract class BaseChartView<T extends ChartAdapter> extends RelativeLayo
         int oldX = mScrollX;
         mScrollX = x;
 
+        notifyScrollChanged();
+        /*log("mScrollX=" + mScrollX);
+
         mOffsetX += mScrollX - oldX;
 
-        checkOffsetX();
+        checkOffsetX();*/
     }
 
     @Override
@@ -310,6 +311,13 @@ public abstract class BaseChartView<T extends ChartAdapter> extends RelativeLayo
             onLeftSide();
         }
 
+        if (mScrollX > getMaxScrollX()) {
+            mScrollX = getMaxScrollX();
+        }
+        if (mScrollX < getMinScrollX()) {
+            mScrollX = getMinScrollX();
+        }
+
         invalidate();
     }
 
@@ -322,17 +330,20 @@ public abstract class BaseChartView<T extends ChartAdapter> extends RelativeLayo
     }
 
     protected float getMinOffsetX() {
-        return 0 + (isLine() ? mPointWidth * mScaleX * .5f : 0);
+        return 0;
     }
 
     protected float getMaxOffsetX() {
-        return (mDataLength - mWidth + mOverScrollRange) - (isLine() ? mPointWidth * mScaleX * .5f : 0);
+        return mDataLength - mWidth + mOverScrollRange;
     }
 
-    /**
-     * 主图最底层绘制线或蜡烛图
-     */
-    protected abstract boolean isLine();
+    private int getMinScrollX() {
+        return (int) (getMinOffsetX() - getMaxOffsetX());
+    }
+
+    private int getMaxScrollX() {
+        return 0;
+    }
 
     /**
      * 设置超出右方后可滑动的范围
@@ -385,7 +396,7 @@ public abstract class BaseChartView<T extends ChartAdapter> extends RelativeLayo
     }
 
     public boolean isLastVisible() {
-        return mEndIndex == mAdapter.getCount() - 1;
+        return mEndIndex == getAdapter().getCount() - 1;
     }
 
     public void setAdapter(T mAdapter) {
@@ -405,24 +416,46 @@ public abstract class BaseChartView<T extends ChartAdapter> extends RelativeLayo
         return mAdapter;
     }
 
-    private void notifyChanged() {
-        if (mAdapter.getCount() > 0) {
+    /**
+     * 什么时候调用？
+     * 1.第一次设置数据
+     * 2.分页添加历史数据（List中向最前添加）
+     * 3.新增柱子（List中向末尾添加）
+     */
+    private void notifyScrollChanged() {
+        //设置数据并测量完成
+        if (getAdapter().getCount() != 0 && mWidth != 0) {
             mDataLength = mAdapter.getCount() * mPointWidth * mScaleX;
 
-            if (getMinOffsetX() < getMaxOffsetX()) {
-                mOffsetX = getMaxOffsetX();
-                onRightSide();
-            } else {
-                mOffsetX = getMinOffsetX();
-                onLeftSide();
-            }
-        }
+            mOffsetX = getMinOffsetX() - getMinScrollX() + mScrollX;
 
-        isLongPress = false;
+            checkOffsetX();
+        }
+    }
+
+    /**
+     * 手势缩放时调用
+     */
+    private void notifyScaleChange(float oldScaleX) {
+        if (getAdapter().getCount() != 0 && mWidth != 0) {
+            mDataLength = getAdapter().getCount() * mPointWidth * mScaleX;
+
+            mOffsetX = (mOffsetX + mWidth * 0.5f) * mScaleX / oldScaleX - mWidth * 0.5f;
+            mScrollX = (int) (mOffsetX - getMinOffsetX() + getMinScrollX());
+
+            checkOffsetX();
+        }
+    }
+
+    /**
+     * 最后一根柱子更新时调用
+     */
+    private void notifyInvalidated() {
+
         invalidate();
     }
 
-    private void notifyInvalidated() {
+    public void cancelSelect() {
         isLongPress = false;
         invalidate();
     }
@@ -469,8 +502,8 @@ public abstract class BaseChartView<T extends ChartAdapter> extends RelativeLayo
         return getX(position) - mOffsetX;
     }
 
-    public void setPointWidth(float mItemWidth) {
-        this.mPointWidth = mItemWidth;
+    public void setPointWidth(float mPointWidth) {
+        this.mPointWidth = mPointWidth;
     }
 
     private OnSelectedChangedListener onSelectedChangedListener;
@@ -487,7 +520,6 @@ public abstract class BaseChartView<T extends ChartAdapter> extends RelativeLayo
          * 当选点中变化时
          *
          * @param view  当前view
-         * @param point 选中的点
          * @param index 选中点的索引
          */
         void onSelectedChanged(BaseChartView view, int index);

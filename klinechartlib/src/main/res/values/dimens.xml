@@ -4,7 +4,7 @@
     <dimen name="chart_highlight_size">11sp</dimen>
     <dimen name="chart_candle_line_width">1dp</dimen>
     <dimen name="chart_candle_width">6dp</dimen>
-    <dimen name="chart_point_width">7dp</dimen>
+    <dimen name="chart_point_width">8dp</dimen>
     <dimen name="chart_line_width">1dp</dimen>
     <dimen name="chart_grid_line_width">0.5dp</dimen>
     <dimen name="chart_0_5dp">0.5dp</dimen>
@@ -12,4 +12,6 @@
     <dimen name="chart_bottom_padding">17dp</dimen>
     <dimen name="child_top_padding">10dp</dimen>
     <dimen name="chart_baseline_width">0.8dp</dimen>
+    <dimen name="chart_radius_beat">2.5dp</dimen>
+    <dimen name="chart_radius_selector">3dp</dimen>
 </resources>

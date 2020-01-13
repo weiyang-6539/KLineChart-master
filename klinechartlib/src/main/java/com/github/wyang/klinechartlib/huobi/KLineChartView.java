@@ -8,6 +8,7 @@ import android.graphics.DashPathEffect;
 import android.graphics.LinearGradient;
 import android.graphics.Paint;
 import android.graphics.Path;
+import android.graphics.PathEffect;
 import android.graphics.PointF;
 import android.graphics.RadialGradient;
 import android.graphics.RectF;
@@ -22,16 +23,19 @@ import com.github.wyang.klinechartlib.R;
 import com.github.wyang.klinechartlib.base.BaseChartView;
 import com.github.wyang.klinechartlib.base.IDateFormatter;
 import com.github.wyang.klinechartlib.base.IValueFormatter;
-import com.github.wyang.klinechartlib.data.ICandle;
 import com.github.wyang.klinechartlib.formatter.DateFormatter;
 import com.github.wyang.klinechartlib.formatter.PercentValueFormatter;
 import com.github.wyang.klinechartlib.formatter.PriceFormatter;
 import com.github.wyang.klinechartlib.formatter.VolumeFormatter;
+import com.github.wyang.klinechartlib.huobi.data.KLineEntity;
 import com.github.wyang.klinechartlib.huobi.draw.ChildDraw;
 import com.github.wyang.klinechartlib.huobi.draw.MainDraw;
 import com.github.wyang.klinechartlib.huobi.helper.LinePathHelper;
 import com.github.wyang.klinechartlib.huobi.helper.TextDrawHelper;
 import com.github.wyang.klinechartlib.utils.PointFPool;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by weiyang on 2019-11-04.
@@ -79,15 +83,25 @@ public class KLineChartView extends BaseChartView<KLineChartAdapter> {
      */
     private Paint mFramePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     /**
-     * 描边的画笔
+     * 线框描边的画笔
      */
     private Paint mStrokePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-
+    /**
+     * 绘制逻辑中需要用到，创建一个成员减少对象的频繁创建
+     */
     private RectF tempRect = new RectF();
 
-    private float mCandleWidth;//蜡烛的宽=mPointWidth - 1dp
-    private float mCandleLineWidth;//蜡烛影线的宽
-
+    /**
+     * 蜡烛的宽=mPointWidth - 1dp
+     */
+    private float mCandleWidth;
+    /**
+     * 蜡烛影线的宽
+     */
+    private float mCandleLineWidth;
+    /**
+     * 全屏状态下需要绘制左右两根线
+     */
     private boolean isDrawGridStartEnd;
 
     @ColorInt
@@ -124,13 +138,27 @@ public class KLineChartView extends BaseChartView<KLineChartAdapter> {
     private IValueFormatter mPercentFormatter;
     private IDateFormatter mDateFormatter;
 
-    private ValueAnimator mBeatAnimator;
+    /**
+     * 绘制选中竖直线的线性渐变
+     */
+    private LinearGradient mSelectorShader;
 
-    private RadialGradient circleGradient;
+    /**
+     * 最后一个数据跳动的值动画
+     */
+    private ValueAnimator mBeatAnimator;
+    /**
+     * 分时图最后一个数据实心圆点半径
+     */
+    private float radiusBeat;
+    /**
+     * 长按选中实心圆点半径
+     */
+    private float radiusSelector;
 
     private ProgressBar mProgressBar;
     private boolean isRefreshing;
-    private boolean isLoadMoreEnd;
+    private boolean isLoadMoreEnd = true;//默认不开启分页，设置onRefreshListener开启
 
     private OnRefreshListener onRefreshListener;
 
@@ -139,61 +167,27 @@ public class KLineChartView extends BaseChartView<KLineChartAdapter> {
     }
 
     public KLineChartView(Context context, @Nullable AttributeSet attrs) {
-        this(context, attrs, 0);
+        super(context, attrs);
+
+        initAttrs(context, attrs);
+        init();
     }
 
     public KLineChartView(Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
 
         initAttrs(context, attrs);
+        init();
+    }
 
-        mProgressBar = new ProgressBar(getContext());
-        LayoutParams layoutParams = new LayoutParams((int) dp2px(50), (int) dp2px(50));
-        layoutParams.addRule(CENTER_IN_PARENT);
-        addView(mProgressBar, layoutParams);
-        mProgressBar.setVisibility(GONE);
+    @Override
+    protected void onLayout(boolean changed, int l, int t, int r, int b) {
+        int centerX = (r - l) / 2;
+        int centerY = (b - t) / 2;
 
-        axisTextPadding = (int) dp2px(5);
+        int v = (int) dp2px(25);
 
-        mTextDrawHelper = new TextDrawHelper();
-
-        mLinePathHelper = new LinePathHelper();
-
-        mMainDraw = new MainDraw(this, mLinePathHelper);
-        mChildDraw1 = new ChildDraw(this, mLinePathHelper);
-        mChildDraw2 = new ChildDraw(this, mLinePathHelper);
-
-        mMainDraw.setTopSpacing(getTopSpacing() * 2 + getAxisTextPadding());
-        mChildDraw1.setTopSpacing(getTopSpacing());
-        mChildDraw2.setTopSpacing(getTopSpacing());
-
-        mLinePaint.setStyle(Paint.Style.STROKE);
-
-        mBaselinePaint.setStyle(Paint.Style.STROKE);
-        mBaselinePaint.setPathEffect(new DashPathEffect(new float[]{20, 10}, 0));
-
-        mSelectedYLinePaint.setStrokeWidth(mPointWidth);
-        mSelectedYLinePaint.setColor(0xffaaaaaa);
-
-        mFramePaint.setColor(0xff081928);
-
-        mStrokePaint.setStyle(Paint.Style.STROKE);
-        mStrokePaint.setStrokeWidth(dp2px(.5f));
-        mStrokePaint.setColor(0xffffffff);
-
-        mCirclePaint.setColor(0xffffffff);
-
-        mBeatAnimator = ValueAnimator.ofFloat(0, 1);
-        mBeatAnimator.setDuration(500);
-        mBeatAnimator.setRepeatCount(ValueAnimator.INFINITE);
-        mBeatAnimator.setRepeatMode(ValueAnimator.REVERSE);
-        mBeatAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
-            @Override
-            public void onAnimationUpdate(ValueAnimator animation) {
-                invalidate();
-            }
-        });
-        mBeatAnimator.start();
+        mProgressBar.layout(centerX - v, centerY - v, centerX + v, centerY + v);
     }
 
     private void initAttrs(Context context, AttributeSet attrs) {
@@ -217,6 +211,8 @@ public class KLineChartView extends BaseChartView<KLineChartAdapter> {
             setBaselineWidth(a.getDimension(R.styleable.KLineChartView_kc_baseline_width, getDimension(R.dimen.chart_baseline_width)));
             setBaselineColorDefault(a.getColor(R.styleable.KLineChartView_kc_baseline_color_default, getColor(R.color.chart_baseline_color_default)));
             setBaselineColorHighlight(a.getColor(R.styleable.KLineChartView_kc_baseline_color_default, getColor(R.color.chart_baseline_color_highlight)));
+            setFrameBackground(a.getColor(R.styleable.KLineChartView_kc_frame_background, getColor(R.color.chart_frame)));
+            setSelectorColor(a.getColor(R.styleable.KLineChartView_kc_selector_color, getColor(R.color.chart_selector)));
 
             setAxisTextColor(a.getColor(R.styleable.KLineChartView_kc_text_color, getColor(R.color.chart_text)));
             setTextSize(a.getDimension(R.styleable.KLineChartView_kc_text_size, getDimension(R.dimen.chart_text_size)));
@@ -224,13 +220,53 @@ public class KLineChartView extends BaseChartView<KLineChartAdapter> {
             setHighlightColor(a.getColor(R.styleable.KLineChartView_kc_highlight_color, getColor(R.color.chart_highlight)));
             setHighlightSize(a.getDimension(R.styleable.KLineChartView_kc_highlight_size, getDimension(R.dimen.chart_highlight_size)));
 
+            setRadiusBeat(a.getDimension(R.styleable.KLineChartView_kc_radius_beat, getDimension(R.dimen.chart_radius_beat)));
+            setRadiusSelector(a.getDimension(R.styleable.KLineChartView_kc_radius_beat, getDimension(R.dimen.chart_radius_selector)));
+
             a.recycle();
         }
     }
 
-    @Override
-    protected boolean isLine() {
-        return mMainDraw.isLine();
+    private void init() {
+        mProgressBar = new ProgressBar(getContext());
+        addView(mProgressBar);
+        mProgressBar.setVisibility(GONE);
+
+        axisTextPadding = (int) dp2px(5);
+
+        mTextDrawHelper = new TextDrawHelper();
+
+        mLinePathHelper = new LinePathHelper();
+
+        mMainDraw = new MainDraw(this, mLinePathHelper);
+        mChildDraw1 = new ChildDraw(this, mLinePathHelper);
+        mChildDraw2 = new ChildDraw(this, mLinePathHelper);
+
+        mMainDraw.setTopSpacing(getTopSpacing() * 2 + getAxisTextPadding());
+        mChildDraw1.setTopSpacing(getTopSpacing());
+        mChildDraw2.setTopSpacing(getTopSpacing());
+
+        mLinePaint.setStyle(Paint.Style.STROKE);
+
+        mBaselinePaint.setStyle(Paint.Style.STROKE);
+        mBaselinePaint.setPathEffect(getBaselinePathEffect());
+
+        mSelectedYLinePaint.setStrokeWidth(mPointWidth);
+
+        mStrokePaint.setStyle(Paint.Style.STROKE);
+        mStrokePaint.setStrokeWidth(dp2px(.5f));
+
+        mBeatAnimator = ValueAnimator.ofFloat(0, 1);
+        mBeatAnimator.setDuration(500);
+        mBeatAnimator.setRepeatCount(ValueAnimator.INFINITE);
+        mBeatAnimator.setRepeatMode(ValueAnimator.REVERSE);
+        mBeatAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+            @Override
+            public void onAnimationUpdate(ValueAnimator animation) {
+                invalidate();
+            }
+        });
+        mBeatAnimator.start();
     }
 
     public void initChartPart() {
@@ -253,11 +289,14 @@ public class KLineChartView extends BaseChartView<KLineChartAdapter> {
             bottom = top + avg;
             mChildDraw2.setBounds(left, top, right, bottom);
         }
+
+        mSelectorShader = new LinearGradient(0, mMainDraw.getMaxAxisY(), 0, mChildDraw2.getMinAxisY(),
+                new int[]{0x11ffffff, 0xffffffff, 0x11ffffff}, new float[]{0, .5f, 1f}, Shader.TileMode.CLAMP);
     }
 
     @Override
     protected float getMinScaleX() {
-        return mCandleLineWidth * 2 / mPointWidth;
+        return mCandleLineWidth * 3 / mPointWidth;
     }
 
     @Override
@@ -266,8 +305,18 @@ public class KLineChartView extends BaseChartView<KLineChartAdapter> {
     }
 
     @Override
+    protected float getMinOffsetX() {
+        return super.getMinOffsetX() + (mMainDraw.isLine() ? mPointWidth * mScaleX * .5f : 0);
+    }
+
+    @Override
+    protected float getMaxOffsetX() {
+        return super.getMaxOffsetX() - (mMainDraw.isLine() ? mPointWidth * mScaleX * .5f : 0);
+    }
+
+    @Override
     protected void onScaleChanged(float oldScale) {
-        mCandleWidth = mPointWidth * mScaleX - mCandleLineWidth;
+        mCandleWidth = mPointWidth * mScaleX - mCandleLineWidth * 2;
         mSelectedYLinePaint.setStrokeWidth(mPointWidth * mScaleX);
     }
 
@@ -285,7 +334,6 @@ public class KLineChartView extends BaseChartView<KLineChartAdapter> {
             if (onRefreshListener != null) {
                 onRefreshListener.onRefresh();
             }
-            mAdapter.notifyDataSetInvalidated();
         }
     }
 
@@ -298,17 +346,15 @@ public class KLineChartView extends BaseChartView<KLineChartAdapter> {
             if (onRefreshListener != null) {
                 onRefreshListener.onLoadMore();
             }
-            mAdapter.notifyDataSetInvalidated();
         }
     }
-
 
     /**
      * 刷新完成
      */
     public void refreshComplete() {
         isRefreshing = false;
-        mAdapter.notifyDataSetInvalidated();
+        mProgressBar.setVisibility(GONE);
     }
 
     /**
@@ -317,7 +363,7 @@ public class KLineChartView extends BaseChartView<KLineChartAdapter> {
     public void refreshEnd() {
         isLoadMoreEnd = true;
         isRefreshing = false;
-        mAdapter.notifyDataSetInvalidated();
+        mProgressBar.setVisibility(GONE);
     }
 
     /**
@@ -355,9 +401,10 @@ public class KLineChartView extends BaseChartView<KLineChartAdapter> {
 
     @Override
     protected void onDraw(Canvas canvas) {
+        super.onDraw(canvas);
         drawGrid(canvas);
 
-        if (mAdapter.getCount() == 0)
+        if (getAdapter().getCount() == 0)
             return;
 
         calculateValue();
@@ -458,10 +505,21 @@ public class KLineChartView extends BaseChartView<KLineChartAdapter> {
         canvas.drawLine(x + mCandleWidth * .5f, arrY[1], x, arrY[1], mLinePaint);
     }
 
+    public void drawRect(Canvas canvas, float x, float top, float bottom, boolean isIncrease) {
+        tempRect.set(x - mCandleWidth * .5f, top, x + mCandleWidth * .5f, bottom);
+        if (isIncrease) {
+            mCandlePaint.setStyle(getIncreaseFill() ? Paint.Style.FILL : Paint.Style.STROKE);
+        } else {
+            mCandlePaint.setStyle(getDecreaseFill() ? Paint.Style.FILL : Paint.Style.STROKE);
+        }
+        mCandlePaint.setColor(isIncrease ? colorIncrease : colorDecrease);
+        canvas.drawRect(tempRect, mCandlePaint);
+    }
+
     /**
      * macd蜡烛图始终为实心柱子
      */
-    public void drawFillCandle(Canvas canvas, float x, float top, float bottom, boolean isRise) {
+    public void drawFillRect(Canvas canvas, float x, float top, float bottom, boolean isRise) {
         tempRect.set(x - mCandleWidth * .5f, top, x + mCandleWidth * .5f, bottom);
         mCandlePaint.setStyle(Paint.Style.FILL);
         mCandlePaint.setColor(isRise ? colorIncrease : colorDecrease);
@@ -519,7 +577,7 @@ public class KLineChartView extends BaseChartView<KLineChartAdapter> {
             if (translateX > mDataLength)
                 continue;
             int index = indexOfX(translateX);
-            String text = getDateFormatter().format(mAdapter.getCandle(index).getTime());
+            String text = getDateFormatter().format(getAdapter().getData(index).time);
 
             p.x = columnSpace * i;
             p.y = isBottomAxisX ? mChildDraw2.getBottom() : mMainDraw.getBottom();
@@ -551,7 +609,7 @@ public class KLineChartView extends BaseChartView<KLineChartAdapter> {
      */
     public void drawBaseLine(Canvas canvas) {
         //绘制最新价基准线
-        float latestPrice = mAdapter.getLatestPrice();
+        float latestPrice = getAdapter().getLatestPrice();
         float closeY = mMainDraw.getAxisY(latestPrice);
         //最新价字符串
         String text = getPriceFormatter().format(latestPrice);
@@ -565,15 +623,19 @@ public class KLineChartView extends BaseChartView<KLineChartAdapter> {
             if (mMainDraw.isLine() && isLastVisible()) {
                 float x = getDrawX(mEndIndex);
 
-                circleGradient = new RadialGradient(x, closeY, 1.5f * mPointWidth, 0x66ffffff, 0x00ffffff, Shader.TileMode.CLAMP);
                 float per = (float) mBeatAnimator.getAnimatedValue();
-                mCirclePaint.setShader(circleGradient);
+                mCirclePaint.setShader(getBeatGradient());
                 mCirclePaint.setAlpha((int) (0xff * per));
-                canvas.drawCircle(x, closeY, 1.5f * mPointWidth, mCirclePaint);
+
+                canvas.save();
+                canvas.translate(x, closeY);
+                canvas.drawCircle(0, 0, mBeatRadius, mCirclePaint);
 
                 mCirclePaint.setShader(null);
                 mCirclePaint.setAlpha(0xff);
-                canvas.drawCircle(x, closeY, 5, mCirclePaint);
+                canvas.drawCircle(0, 0, radiusBeat, mCirclePaint);
+
+                canvas.restore();
             }
 
             float left = mWidth - w;
@@ -595,7 +657,7 @@ public class KLineChartView extends BaseChartView<KLineChartAdapter> {
             text += " ▶";
             w = mHighLightPaint.measureText(text) + axisTextPadding * 2;
             float radius = mTextDrawHelper.getTextHeight(mHighLightPaint) / 2;
-            float left = (mWidth - w) * 4.0f / 5;
+            float left = (mWidth - w) * (mGridRows - 1) / mGridRows;
             float top = closeY - radius;
             float right = left + w;
             float bottom = closeY + radius;
@@ -616,31 +678,29 @@ public class KLineChartView extends BaseChartView<KLineChartAdapter> {
      */
     private void drawLongPressStatus(Canvas canvas) {
         if (isLongPress()) {
-            ICandle candle = mAdapter.getCandle(mSelectedIndex);
+            KLineEntity entity = getAdapter().getData(mSelectedIndex);
 
             float x = getDrawX(mSelectedIndex);//选中数据对应View的x坐标
-            float y = mMainDraw.getAxisY(candle.getClose());//选中数据收盘价对应View的y坐标
+            float y = mMainDraw.getAxisY(entity.close);//选中数据收盘价对应View的y坐标
 
             //绘制选择竖线
             mSelectedYLinePaint.setAlpha(0x33);
-            LinearGradient shader = new LinearGradient(x, mMainDraw.getMaxAxisY(), x, mChildDraw2.getMinAxisY(),
-                    new int[]{0x11ffffff, 0xffffffff, 0x11ffffff}, new float[]{0, .5f, 1f}, Shader.TileMode.CLAMP);
-            mSelectedYLinePaint.setShader(shader);
+            mSelectedYLinePaint.setShader(mSelectorShader);
             canvas.drawLine(x, mMainDraw.getMaxAxisY(), x, mHeight, mSelectedYLinePaint);
 
             //选中收盘价的大圆带透明
             mSelectedYLinePaint.setAlpha(0x44);
             mSelectedYLinePaint.setShader(null);
-            canvas.drawCircle(x, y, 1.5f * mPointWidth, mSelectedYLinePaint);
+            canvas.drawCircle(x, y, mBeatRadius, mSelectedYLinePaint);
 
             //选中收盘价的x轴方向基准线及实心小圆点
             canvas.drawLine(0, y, mWidth, y, mStrokePaint);
-            canvas.drawCircle(x, y, 5, mCirclePaint);
+            canvas.drawCircle(x, y, radiusSelector, mCirclePaint);
 
             float padding = dp2px(5);
 
             //当前选中数据的收盘价
-            String text = getPriceFormatter().format(candle.getClose());
+            String text = getPriceFormatter().format(entity.close);
 
             float halfHeight = mTextDrawHelper.getTextHeight(mHighLightPaint) / 2;
             float textWidth = mHighLightPaint.measureText(text);
@@ -677,7 +737,7 @@ public class KLineChartView extends BaseChartView<KLineChartAdapter> {
             }
 
             //当前选中数据时间
-            String date = getDateFormatter().format(candle.getTime());
+            String date = getDateFormatter().format(entity.time);
             if (!isBottomAxisX) {
                 y = mMainDraw.getMinAxisY();
             } else {
@@ -701,7 +761,7 @@ public class KLineChartView extends BaseChartView<KLineChartAdapter> {
             mTextDrawHelper.drawPointCenter(canvas, date, p, mHighLightPaint);
             PointFPool.recycle(p);
 
-             /*if (!mMainDraw.isLine()) {
+            if (!mMainDraw.isLine()) {
                 float width = 0;
                 float height;
                 top = padding + mMainDraw.getMaxAxisY();
@@ -716,18 +776,18 @@ public class KLineChartView extends BaseChartView<KLineChartAdapter> {
                 labels.add(getString(R.string.chart_change_percent));
                 labels.add(getString(R.string.chart_amount));
 
-                float change = candle.getClose() - candle.getOpen();
-                float percent = change / candle.getClose();
+                float change = entity.close - entity.open;
+                float percent = change / entity.close;
 
                 List<String> values = new ArrayList<>();
-                values.add(getDateFormatter().format(candle.getTime()));
-                values.add(getPriceFormatter().format(candle.getOpen()));
-                values.add(getPriceFormatter().format(candle.getHigh()));
-                values.add(getPriceFormatter().format(candle.getLow()));
-                values.add(getPriceFormatter().format(candle.getClose()));
+                values.add(getDateFormatter().format(entity.time));
+                values.add(getPriceFormatter().format(entity.open));
+                values.add(getPriceFormatter().format(entity.high));
+                values.add(getPriceFormatter().format(entity.low));
+                values.add(getPriceFormatter().format(entity.close));
                 values.add(getPriceFormatter().format(change));
                 values.add(getPercentFormatter().format(percent));
-                values.add(getVolumeFormatter().format(candle.getVolume()));
+                values.add(getVolumeFormatter().format(entity.vol));
 
                 for (int i = 0; i < labels.size(); i++) {
                     String str = labels.get(i) + values.get(i);
@@ -752,7 +812,6 @@ public class KLineChartView extends BaseChartView<KLineChartAdapter> {
                 canvas.drawRoundRect(tempRect, 2, 2, mStrokePaint);
                 mFramePaint.setAlpha(0xff);
 
-
                 y = top + padding * 1;
 
                 mTextPaint.setColor(axisTextColor);
@@ -772,7 +831,7 @@ public class KLineChartView extends BaseChartView<KLineChartAdapter> {
                     y += h;
                 }
                 PointFPool.recycle(p1);
-            }*/
+            }
         }
     }
 
@@ -835,6 +894,24 @@ public class KLineChartView extends BaseChartView<KLineChartAdapter> {
 
     public void setBaselineColorHighlight(@ColorInt int color) {
         this.baselineColorHighlight = color;
+    }
+
+    public PathEffect getBaselinePathEffect() {
+        return new DashPathEffect(new float[]{20, 10}, 0);
+    }
+
+    public void setBaselinePathEffect(PathEffect effect) {
+        mBaselinePaint.setPathEffect(effect);
+    }
+
+    public void setFrameBackground(@ColorInt int color) {
+        mFramePaint.setColor(color);
+    }
+
+    public void setSelectorColor(@ColorInt int color) {
+        mSelectedYLinePaint.setColor(color);
+        mStrokePaint.setColor(color);
+        mCirclePaint.setColor(color);
     }
 
     /**
@@ -934,31 +1011,32 @@ public class KLineChartView extends BaseChartView<KLineChartAdapter> {
         mMainDraw.setMode(mode);
 
         float oldScaleX = mScaleX;
-        if (isLine())
+        if (mMainDraw.isLine())
             mScaleX = 0.7f;
         else
             mScaleX = 1.0f;
         onScaleChanged(oldScaleX);
 
-        mAdapter.notifyDataSetChanged();
+        mOffsetX = Float.MIN_VALUE;
+        getAdapter().notifyDataSetChanged();
     }
 
     public void setMainSelected(String name) {
         mMainDraw.setName(name);
 
-        mAdapter.notifyDataSetInvalidated();
+        getAdapter().notifyDataSetInvalidated();
     }
 
     public void setChild1Selected(String name) {
         mChildDraw1.setName(name);
 
-        mAdapter.notifyDataSetInvalidated();
+        getAdapter().notifyDataSetInvalidated();
     }
 
     public void setChild2Selected(String name) {
         mChildDraw2.setName(name);
 
-        mAdapter.notifyDataSetInvalidated();
+        getAdapter().notifyDataSetInvalidated();
     }
 
     public IValueFormatter getPriceFormatter() {
@@ -1002,8 +1080,39 @@ public class KLineChartView extends BaseChartView<KLineChartAdapter> {
         this.mDateFormatter = mDateFormatter;
     }
 
+    /**
+     * 分时线最后一个数据跳动效果
+     */
+    private RadialGradient mBeatGradient;
+    private float mBeatRadius;//跳动circle的最大半径
+
+    private RadialGradient getBeatGradient() {
+        if (mBeatGradient == null) {
+            mBeatRadius = 1.5f * mPointWidth;
+            mBeatGradient = new RadialGradient(0, 0, mBeatRadius,
+                    0x66ffffff, 0x00ffffff, Shader.TileMode.CLAMP);
+        }
+        return mBeatGradient;
+    }
+
+    private void setBeatGradient(float radius, @ColorInt int centerColor, @ColorInt int edgeColor) {
+        mBeatGradient = new RadialGradient(0, 0, radius,
+                centerColor, edgeColor, Shader.TileMode.CLAMP);
+        mBeatRadius = radius;
+    }
+
+    public void setRadiusBeat(float radiusBeat) {
+        this.radiusBeat = radiusBeat;
+    }
+
+    public void setRadiusSelector(float radiusSelector) {
+        this.radiusSelector = radiusSelector;
+    }
+
     public void setOnRefreshListener(OnRefreshListener onRefreshListener) {
         this.onRefreshListener = onRefreshListener;
+
+        isLoadMoreEnd = onRefreshListener == null;
     }
 
     public interface OnRefreshListener {

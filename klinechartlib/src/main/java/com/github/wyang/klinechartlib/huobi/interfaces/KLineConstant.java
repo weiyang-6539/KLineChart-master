@@ -8,9 +8,9 @@ public interface KLineConstant {
     Integer[] COLORS = new Integer[]{0xfff2dc9c, 0xff7ecfc0, 0xffc197f7, 0xffec4d46, 0xff89ce40, 0xff6437f5};
 
     /**
-     * 数组中存在null说明线的显示数量可变
+     * 数组中存在 Integer.MAX_VALUE 时，表示当前指标线不可用
      */
-    int[] MA_N = new int[]{5, 10, 30, Integer.MAX_VALUE, Integer.MAX_VALUE, Integer.MAX_VALUE};
+    int[] MA_N = new int[]{5, 20, 30, Integer.MAX_VALUE, Integer.MAX_VALUE, Integer.MAX_VALUE};
     int[] EMA_N = new int[]{12, 26};
     int[] BOLL_N = new int[]{20, 2};
 
@@ -18,5 +18,5 @@ public interface KLineConstant {
     int[] MACD_N = new int[]{12, 26, 9};
     int[] KDJ_N = new int[]{14, 1, 3};
     int[] RSI_N = new int[]{14, 12, 6};
-    int[] WR_N = new int[]{14, 12, 6};
+    int[] WR_N = new int[]{14, Integer.MAX_VALUE, Integer.MAX_VALUE};
 }

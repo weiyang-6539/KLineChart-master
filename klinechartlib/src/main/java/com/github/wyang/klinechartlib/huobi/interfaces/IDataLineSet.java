@@ -13,7 +13,7 @@ public interface IDataLineSet {
 
     int getCount();
 
-    void addData(IData o);
+    void addData(boolean replace, int position, IData o);
 
     <T extends IData> T getData(int position);
 
@@ -25,7 +25,7 @@ public interface IDataLineSet {
 
     String getLabel(int index);
 
-    void addLinePoint(Float... floats);
+    void addLinePoint(boolean replace, int position, Float... floats);
 
     Float getLinePoint(int index, int position);
 
