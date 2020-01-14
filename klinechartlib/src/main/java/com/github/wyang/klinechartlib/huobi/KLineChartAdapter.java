@@ -34,6 +34,7 @@ public class KLineChartAdapter extends ChartAdapter implements IKLineChartAdapte
 
     @Override
     public void setNewData(List<KLineEntity> list) {
+        mData.clear();
         mData.addAll(list);
 
         provider.calculateAll(mData);
