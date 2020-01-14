@@ -429,7 +429,7 @@ public abstract class BaseChartView<T extends ChartAdapter> extends ViewGroup im
         if (getAdapter().getCount() != 0 && mWidth != 0) {
             mDataLength = mAdapter.getCount() * mPointWidth * mScaleX;
 
-            mOffsetX = getMaxOffsetX() - getMinOffsetX() + mScrollX;
+            mOffsetX = getMaxOffsetX() + mScrollX;
 
             checkOffsetX();
         }
@@ -443,7 +443,7 @@ public abstract class BaseChartView<T extends ChartAdapter> extends ViewGroup im
             mDataLength = getAdapter().getCount() * mPointWidth * mScaleX;
 
             mOffsetX = (mOffsetX + mWidth * 0.5f) * mScaleX / oldScaleX - mWidth * 0.5f;
-            mScrollX = (int) (mOffsetX - getMaxOffsetX() + getMinOffsetX());
+            mScrollX = (int) mOffsetX + getMinScrollX();
 
             checkOffsetX();
         }
