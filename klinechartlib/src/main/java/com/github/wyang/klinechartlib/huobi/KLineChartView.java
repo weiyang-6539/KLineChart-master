@@ -38,7 +38,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Created by weiyang on 2019-11-04.
+ * Created by fxb on 2019-11-04.
  * 高仿火币K线图，界面绘制结构为：烛状图（主图） + 2个指标图（副图，最少显示一个）
  * 这里实现是在一个ViewGroup里画主图及子图，MPAndroidChart每一个图对应一个ViewGroup（使用较为麻烦）
  * 这里仅实现绘制蜡烛图图及添加辅助线，子图的Candle使用美国线绘制

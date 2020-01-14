@@ -1,7 +1,7 @@
 package com.github.wyang.klinechartlib.data;
 
 /**
- * Created by weiyang on 2019-11-11.
+ * Created by fxb on 2019-11-11.
  * 蜡烛图对应图形：上影线 + 矩形 + 下影线
  */
 public interface ICandle {

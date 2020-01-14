@@ -4,7 +4,7 @@ import com.github.wyang.klinechartlib.data.ICandle;
 import com.github.wyang.klinechartlib.huobi.interfaces.IData;
 
 /**
- * Created by weiyang on 2019-11-11.
+ * Created by fxb on 2019-11-11.
  */
 public class Candle implements ICandle, IData {
     public float open;

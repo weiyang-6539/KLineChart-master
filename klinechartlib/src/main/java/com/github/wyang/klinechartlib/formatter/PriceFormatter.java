@@ -7,7 +7,7 @@ import com.github.wyang.klinechartlib.base.IValueFormatter;
 import java.text.DecimalFormat;
 
 /**
- * Created by weiyang on 2019-11-08.
+ * Created by fxb on 2019-11-08.
  */
 public class PriceFormatter implements IValueFormatter {
     private DecimalFormat format;

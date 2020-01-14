@@ -20,22 +20,21 @@ import android.widget.TextView;
 
 import com.chad.library.adapter.base.BaseQuickAdapter;
 import com.chad.library.adapter.base.BaseViewHolder;
-import com.github.wyang.klinechartlib.huobi.data.KLineEntity;
 import com.github.wyang.klinechartdemo.utils.AssetUtil;
 import com.github.wyang.klinechartdemo.widget.CommonPopupWindow;
 import com.github.wyang.klinechartlib.huobi.KLineChartAdapter;
 import com.github.wyang.klinechartlib.huobi.KLineChartView;
 import com.github.wyang.klinechartlib.huobi.data.DataLineSetProvider;
+import com.github.wyang.klinechartlib.huobi.data.KLineEntity;
 import com.github.wyang.klinechartlib.huobi.draw.MainDraw;
 
 import org.json.JSONArray;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 
 /**
- * Created by weiyang on 2019-11-01.
+ * Created by fxb on 2019-11-01.
  */
 public class KLineChartActivity extends AppCompatActivity {
     private TextView tv_title;

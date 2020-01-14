@@ -11,7 +11,7 @@ import android.view.WindowManager;
 import android.widget.PopupWindow;
 
 /**
- * Created by weiyang on 2017/6/22.
+ * Created by fxb on 2017/6/22.
  */
 public class PopupController {
     private int layoutResId;//布局id

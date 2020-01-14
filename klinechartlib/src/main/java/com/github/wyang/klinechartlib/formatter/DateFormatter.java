@@ -10,7 +10,7 @@ import java.util.Locale;
 import java.util.TimeZone;
 
 /**
- * Created by weiyang on 2019-11-06.
+ * Created by fxb on 2019-11-06.
  */
 public class DateFormatter implements IDateFormatter {
     private SimpleDateFormat format;

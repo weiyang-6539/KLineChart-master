@@ -22,7 +22,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.util.List;
 
 /**
- * Created by weiyang on 2019-11-04.
+ * Created by fxb on 2019-11-04.
  * 最下面为收盘线or蜡烛图，支持均线，boll线...
  */
 public class MainDraw extends ChartDraw {

@@ -18,7 +18,7 @@ import android.view.ViewGroup;
 import android.widget.OverScroller;
 
 /**
- * Created by weiyang on 2019-11-01.
+ * Created by fxb on 2019-11-01.
  * K线图View基类，处理测量逻辑，滑动缩放逻辑，及数据适配器和长按选中哪一项，具体绘制交由子类
  */
 public abstract class BaseChartView<T extends ChartAdapter> extends ViewGroup implements
@@ -216,7 +216,8 @@ public abstract class BaseChartView<T extends ChartAdapter> extends ViewGroup im
     @Override
     public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
         if (!isTouch && !isLongPress() && isScrollEnable()) {
-            mScroller.fling(mScrollX, 0, Math.round(-velocityX), 0, Integer.MIN_VALUE, Integer.MAX_VALUE, 0, 0);
+            mScroller.fling(mScrollX, 0, Math.round(-velocityX),
+                    0, Integer.MIN_VALUE, Integer.MAX_VALUE, 0, 0);
         }
         return true;
     }
@@ -280,7 +281,8 @@ public abstract class BaseChartView<T extends ChartAdapter> extends ViewGroup im
         mScrollX = x;
 
         notifyScrollChanged();
-        /*log("mScrollX=" + mScrollX);
+        /*
+        log("mScrollX=" + mScrollX);
 
         mOffsetX += mScrollX - oldX;
 
@@ -427,7 +429,7 @@ public abstract class BaseChartView<T extends ChartAdapter> extends ViewGroup im
         if (getAdapter().getCount() != 0 && mWidth != 0) {
             mDataLength = mAdapter.getCount() * mPointWidth * mScaleX;
 
-            mOffsetX = getMinOffsetX() - getMinScrollX() + mScrollX;
+            mOffsetX = getMaxOffsetX() - getMinOffsetX() + mScrollX;
 
             checkOffsetX();
         }
@@ -441,7 +443,7 @@ public abstract class BaseChartView<T extends ChartAdapter> extends ViewGroup im
             mDataLength = getAdapter().getCount() * mPointWidth * mScaleX;
 
             mOffsetX = (mOffsetX + mWidth * 0.5f) * mScaleX / oldScaleX - mWidth * 0.5f;
-            mScrollX = (int) (mOffsetX - getMinOffsetX() + getMinScrollX());
+            mScrollX = (int) (mOffsetX - getMaxOffsetX() + getMinOffsetX());
 
             checkOffsetX();
         }

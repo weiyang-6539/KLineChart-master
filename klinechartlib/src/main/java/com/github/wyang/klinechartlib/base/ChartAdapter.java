@@ -7,7 +7,7 @@ import android.support.annotation.NonNull;
 import com.github.wyang.klinechartlib.huobi.KLineChartView;
 
 /**
- * Created by weiyang on 2019-11-04.
+ * Created by fxb on 2019-11-04.
  */
 public abstract class ChartAdapter {
     protected final DataSetObservable mDataSetObservable = new DataSetObservable();

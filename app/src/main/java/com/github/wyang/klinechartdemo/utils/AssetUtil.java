@@ -8,7 +8,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 
 /**
- * Created by weiyang on 2019-11-04.
+ * Created by fxb on 2019-11-04.
  */
 public class AssetUtil {
 

@@ -11,7 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Created by weiyang on 2019-11-04.
+ * Created by fxb on 2019-11-04.
  */
 public class KLineChartAdapter extends ChartAdapter implements IKLineChartAdapter {
     private List<KLineEntity> mData = new ArrayList<>();

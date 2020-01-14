@@ -8,7 +8,7 @@ import com.github.wyang.klinechartlib.huobi.KLineChartView;
 import com.github.wyang.klinechartlib.huobi.helper.LinePathHelper;
 
 /**
- * Created by weiyang on 2019-11-04.
+ * Created by fxb on 2019-11-04.
  * 图表拆分部分，绘制流程如下：
  * 1，绘制蜡烛图（K线蜡烛，成交量，成交额）
  * 2，绘制指标线（同区域存在多条指标线，不分先后顺序）
