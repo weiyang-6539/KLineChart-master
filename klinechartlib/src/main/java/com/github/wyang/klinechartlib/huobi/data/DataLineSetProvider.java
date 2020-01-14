@@ -213,7 +213,7 @@ public class DataLineSetProvider implements IDataLineSetProvider, KLineConstant 
                 float value = c - bollMa / BOLL_N[0];
                 md += value * value;
             }
-            md = md / BOLL_N[0] - 1;
+            md = md / (BOLL_N[0] - 1);
             md = (float) Math.sqrt(md);
 
             float boll = bollMa / BOLL_N[0];
