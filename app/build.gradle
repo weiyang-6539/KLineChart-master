@@ -3,6 +3,7 @@ apply plugin: 'com.android.application'
 android {
     compileSdkVersion rootProject.ext.compileSdkVersion
     buildToolsVersion rootProject.ext.buildToolsVersion
+    namespace "com.github.wyang.klinechartdemo"
     defaultConfig {
         applicationId "com.github.wyang.klinechartdemo"
         minSdkVersion rootProject.ext.minSdkVersion
