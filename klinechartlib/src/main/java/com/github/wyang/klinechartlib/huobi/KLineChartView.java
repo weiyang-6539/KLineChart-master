@@ -110,7 +110,7 @@ public class KLineChartView extends BaseChartView<KLineChartAdapter> {
 
     private int increaseFill = 1 << 1;
     private int decreaseFill = 1;
-    private int fillMode = increaseFill | decreaseFill;
+    private int fillMode = 0;
     @ColorInt
     private int colorIncrease;//涨的颜色
     @ColorInt

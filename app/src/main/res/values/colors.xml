@@ -7,4 +7,7 @@
     <color name="theme0xff">#FF2E7DF6</color>
     <color name="theme0xaa">#AA2E7DF6</color>
     <color name="light">#999999</color>
+
+    <color name="chart_red">#C75266</color>
+    <color name="chart_green">#4BA692</color>
 </resources>

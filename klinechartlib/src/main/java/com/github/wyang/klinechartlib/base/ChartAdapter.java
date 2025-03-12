@@ -2,9 +2,6 @@ package com.github.wyang.klinechartlib.base;
 
 import android.database.DataSetObservable;
 import android.database.DataSetObserver;
-import android.support.annotation.NonNull;
-
-import com.github.wyang.klinechartlib.huobi.KLineChartView;
 
 /**
  * Created by fxb on 2019-11-04.

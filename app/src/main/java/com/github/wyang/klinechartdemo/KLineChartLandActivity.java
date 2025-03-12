@@ -103,19 +103,14 @@ public class KLineChartLandActivity extends AppCompatActivity {
 
         rg_main.setOnCheckedChangeListener((group, checkedId) -> {
             btn_main_hide.setSelected(checkedId != View.NO_ID);
-            switch (checkedId) {
-                case R.id.rb_ma:
-                    mKLineChartView.setMainSelected("ma");
-                    break;
-                case R.id.rb_ema:
-                    mKLineChartView.setMainSelected("ema");
-                    break;
-                case R.id.rb_boll:
-                    mKLineChartView.setMainSelected("boll");
-                    break;
-                default:
-                    mKLineChartView.setMainSelected("");
-                    break;
+            if (checkedId == R.id.rb_ma) {
+                mKLineChartView.setMainSelected("ma");
+            } else if (checkedId == R.id.rb_ema) {
+                mKLineChartView.setMainSelected("ema");
+            } else if (checkedId == R.id.rb_boll) {
+                mKLineChartView.setMainSelected("boll");
+            } else {
+                mKLineChartView.setMainSelected("");
             }
         });
         rg_main.check(R.id.rb_ma);
@@ -124,24 +119,16 @@ public class KLineChartLandActivity extends AppCompatActivity {
             btn_sub_hide.setSelected(checkedId != View.NO_ID);
             mKLineChartView.setShowChild2(checkedId != View.NO_ID);
 
-            switch (checkedId) {
-                case R.id.rb_macd:
-                    mKLineChartView.setChild2Selected("macd");
-                    break;
-                case R.id.rb_kdj:
-                    mKLineChartView.setChild2Selected("kdj");
-                    break;
-                case R.id.rb_rsi:
-                    mKLineChartView.setChild2Selected("rsi");
-                    break;
-                case R.id.rb_wr:
-                    mKLineChartView.setChild2Selected("wr");
-                    break;
-                case R.id.rb_boll_child:
-                    mKLineChartView.setChild2Selected("boll");
-                    break;
-                default:
-                    break;
+            if (checkedId == R.id.rb_macd) {
+                mKLineChartView.setChild2Selected("macd");
+            } else if (checkedId == R.id.rb_kdj) {
+                mKLineChartView.setChild2Selected("kdj");
+            } else if (checkedId == R.id.rb_rsi) {
+                mKLineChartView.setChild2Selected("rsi");
+            } else if (checkedId == R.id.rb_wr) {
+                mKLineChartView.setChild2Selected("wr");
+            } else if (checkedId == R.id.rb_boll_child) {
+                mKLineChartView.setChild2Selected("boll");
             }
         });
         rg_sub.check(R.id.rb_macd);
